@@ -21,6 +21,9 @@ public:
 		KAddr addr;
 		addr.set(ip,port);
 		m_connection.SetAddr(addr.sockAddr());
+		m_connection.SetMTU(m_options.mtu);
+		m_connection.SetWndSize(m_options.sndwnd,m_options.rcvwnd);
+		m_connection.SetNodelay(m_options.nodelay,m_options.updateInterval,m_options.fastResend,m_options.enableCC);
 	}
 
 	int Send(const char* data,int len)
@@ -38,6 +41,7 @@ public:
 
 	int Wait(KEvent *ev,int evMax,ktime_t delay=0);
 
+	void SetOptions(const KOptions* opt){m_options=*opt;}
 protected:
 
 	virtual int SendPacket(const struct sockaddr* addr,const char *buf, int len)
@@ -53,4 +57,5 @@ protected:
 private:
 	KSocket m_socket;
 	KConnection m_connection;
+	KOptions m_options;
 };

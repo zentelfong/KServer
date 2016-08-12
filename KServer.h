@@ -53,6 +53,7 @@ public:
 	//检查事件
 	int Wait(KEvent *ev,int evMax,int delay=-1);
 
+	void SetOptions(const KOptions* opt){m_options=*opt;}
 protected:
 
 	//发送UDP包
@@ -69,5 +70,6 @@ private:
 	KSocket            m_socket;
 	KHeap<KConnection> m_kcpHeap;
 	KHashMap<KConnection> m_kcpHash;
+	KOptions m_options;
 };
 

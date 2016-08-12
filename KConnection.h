@@ -27,6 +27,31 @@ struct KEvent
 	kcp_t        kcp;
 };
 
+struct KOptions{
+	KOptions()
+	{
+		connectionLife=60*1000;//默认1分钟
+		mtu=1400;
+		sndwnd=32;
+		rcvwnd=32;
+		updateInterval=100;
+
+		nodelay=false;
+		fastResend=true;
+		enableCC=true;
+	}
+	ktime_t	connectionLife;//连接的生命时间长度单位毫秒
+	int mtu;//MTU
+	int sndwnd;//发送滑动窗口大小
+	int rcvwnd;//接收滑动窗口大小
+	int updateInterval;//更新时间间隔
+
+	bool nodelay;//是否无延迟发包
+	bool fastResend;//是否开启快速重传
+	bool enableCC;//是否开启流量控制
+};
+
+
 //连接
 class KConnection:public KMalloc
 {

@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KServer", "KServer.vcxproj", "{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Linux = Debug|Linux
+		Debug|Win32 = Debug|Win32
+		Debug|Win64 = Debug|Win64
+		Release|Linux = Release|Linux
+		Release|Win32 = Release|Win32
+		Release|Win64 = Release|Win64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Debug|Linux.ActiveCfg = Debug Linux|x64
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Debug|Linux.Build.0 = Debug Linux|x64
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Debug|Win32.Build.0 = Debug|Win32
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Debug|Win64.ActiveCfg = Debug Win64|x64
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Debug|Win64.Build.0 = Debug Win64|x64
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Release|Linux.ActiveCfg = Release Linux|x64
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Release|Linux.Build.0 = Release Linux|x64
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Release|Win32.ActiveCfg = Release|Win32
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Release|Win32.Build.0 = Release|Win32
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Release|Win64.ActiveCfg = Release Win64|x64
+		{A7C70F5A-13A7-8EF5-1CBF-19CC881DF556}.Release|Win64.Build.0 = Release Win64|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

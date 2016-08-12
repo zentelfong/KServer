@@ -38,7 +38,7 @@ int KClient::Wait(KEvent *ev,int evMax,ktime_t delay)
 		} while (1);
 	}
 
-	if (time - m_connection.GetLastRecvTime() > 60000*3)//3分钟超时
+	if (time - m_connection.GetLastRecvTime() > m_options.connectionLife)//3分钟超时
 	{
 		if(count<evMax)
 		{

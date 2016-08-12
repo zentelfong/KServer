@@ -39,6 +39,10 @@ int KServer::Wait(KEvent *ev,int evMax,int delay)
 				else
 				{
 					conn=new KConnection(this,kcpid);//新连接到来
+					conn->SetMTU(m_options.mtu);
+					conn->SetWndSize(m_options.sndwnd,m_options.rcvwnd);
+					conn->SetNodelay(m_options.nodelay,m_options.updateInterval,m_options.fastResend,m_options.enableCC);
+
 					m_kcpHash.Set(kcpid,conn);
 					m_kcpHeap.Push(conn);
 					conn->RecvPacket(buf,recv,time,&addr);
@@ -65,11 +69,11 @@ int KServer::Wait(KEvent *ev,int evMax,int delay)
 		m_kcpHeap.Pop();
 		kcp_t kcpId=conn->GetKcpId();
 
-		if (time - conn->GetLastRecvTime() > 60000*3)//3分钟超时
+		if (time - conn->GetLastRecvTime() > m_options.connectionLife)//3分钟超时
 		{
 			m_kcpHash.Remove(kcpId);
 			delete conn;
-
+			printf("close connection %d\n",kcpId);
 			if(count<evMax)
 			{
 				ev[count].kcp=kcpId;

@@ -87,7 +87,7 @@ private:
 class KMalloc
 {
 public:
-	void * operator new(unsigned int bytes)
+	void * operator new(size_t bytes)
 	{
 		KMemPoll* poll=KMemPoll::Current();
 		if (poll)
@@ -98,7 +98,7 @@ public:
 			return malloc(bytes);
 	}
 
-	void * operator new[](unsigned int bytes)
+	void * operator new[](size_t bytes)
 	{
 		KMemPoll* poll=KMemPoll::Current();
 		if (poll)
