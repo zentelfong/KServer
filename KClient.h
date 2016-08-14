@@ -8,22 +8,23 @@
 class KClient:public KTransportBase
 {
 public:
-	KClient(kcp_t kcpId)
-		:m_connection(this,kcpId)
+	KClient(int af,kcp_t kcpId)
+		:m_socket(af),m_connection(kcpId)
 	{
-		ikcp_allocator(kMalloc,kFree);
+		m_connection.SetTransport(this);
 	}
 
-	int Bind(const sockaddr* addr){return m_socket.Bind(addr);}
+	int Bind(const KAddr* addr){return m_socket.Bind(addr);}
 
 	void Connect(const char* ip,int port)
 	{
 		KAddr addr;
-		addr.set(ip,port);
-		m_connection.SetAddr(addr.sockAddr());
+		addr.setIp(ip);
+		addr.setPort(port);
+		m_connection.SetAddr(&addr);
 		m_connection.SetMTU(m_options.mtu);
 		m_connection.SetWndSize(m_options.sndwnd,m_options.rcvwnd);
-		m_connection.SetNodelay(m_options.nodelay,m_options.updateInterval,m_options.fastResend,m_options.enableCC);
+		m_connection.SetNodelay(m_options.nodelay,m_options.interval,m_options.fastResend,m_options.enableCC);
 	}
 
 	int Send(const char* data,int len)
@@ -44,7 +45,7 @@ public:
 	void SetOptions(const KOptions* opt){m_options=*opt;}
 protected:
 
-	virtual int SendPacket(const struct sockaddr* addr,const char *buf, int len)
+	virtual int SendPacket(const KAddr* addr,const char *buf, int len)
 	{
 		return m_socket.Sendto(buf,len,addr);
 	}

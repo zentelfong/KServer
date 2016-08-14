@@ -7,9 +7,9 @@
 class KServer:public KTransportBase
 {
 public:
-	KServer()
+	KServer(int af)
+		:m_socket(af)
 	{
-		ikcp_allocator(kMalloc,kFree);
 	}
 
 	~KServer()
@@ -23,7 +23,7 @@ public:
 		m_kcpHash.Clear();
 	}
 
-	int Bind(const sockaddr* addr){return m_socket.Bind(addr);}
+	int Bind(const KAddr* addr){return m_socket.Bind(addr);}
 
 	int Send(kcp_t kcp,const char* data,int len)
 	{
@@ -57,7 +57,7 @@ public:
 protected:
 
 	//·¢ËÍUDP°ü
-	virtual int SendPacket(const struct sockaddr* addr,const char *buf, int len)
+	virtual int SendPacket(const KAddr* addr,const char *buf, int len)
 	{
 		return m_socket.Sendto(buf,len,addr);
 	}

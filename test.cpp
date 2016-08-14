@@ -6,14 +6,16 @@
 void RunServer()
 {
 	printf("RunServer:\n");
-	KServer server;
+	KServer server(AF_INET);
 	sockaddr_in addr;
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(9091);
 	addr.sin_addr.s_addr = INADDR_ANY;
 	memset(&(addr.sin_zero), '\0', 8);
 
-	int rslt=server.Bind((sockaddr*)&addr);
+	KAddr kaddr;
+	kaddr.set(addr);
+	int rslt=server.Bind(&kaddr);
 	assert(rslt==0);
 	KEvent ev[128];
 
@@ -47,14 +49,16 @@ void RunServer()
 void RunClient()
 {
 	printf("RunClient:\n");
-	KClient client(123);
+	KClient client(AF_INET,123);
 	sockaddr_in addr2;
 	addr2.sin_family = AF_INET;
 	addr2.sin_port = htons(0);
 	addr2.sin_addr.s_addr = INADDR_ANY;
 	memset(&(addr2.sin_zero), '\0', 8);
 
-	int rslt=client.Bind((sockaddr*)&addr2);
+	KAddr kaddr;
+	kaddr.set(addr2);
+	int rslt=client.Bind(&kaddr);
 	assert(rslt==0);
 
 	client.Connect("127.0.0.1",9091);
@@ -88,7 +92,7 @@ void RunClient()
 #include <vector>
 
 
-#define CLINET_COUNT 1000
+#define CLINET_COUNT 100
 
 void RunMultiClient()
 {
@@ -98,14 +102,16 @@ void RunMultiClient()
 
 	for (int i=0;i<CLINET_COUNT;++i)
 	{
-		KClient* client=new KClient(i);
+		KClient* client=new KClient(AF_INET,i);
 		sockaddr_in addr2;
 		addr2.sin_family = AF_INET;
 		addr2.sin_port = htons(0);
 		addr2.sin_addr.s_addr = INADDR_ANY;
 		memset(&(addr2.sin_zero), '\0', 8);
 
-		int rslt=client->Bind((sockaddr*)&addr2);
+		KAddr kaddr;
+		kaddr.set(addr2);
+		int rslt=client->Bind(&kaddr);
 		assert(rslt==0);
 
 		client->Connect("127.0.0.1",9091);
@@ -149,6 +155,7 @@ int main()
 	int rslt=0;
 	KMemPoll poll(1024*1024);
 	poll.SetCurrent();
+	ikcp_allocator(kMalloc,kFree);
 
 	printf("输入s启动服务器，c启动客户端,m启动多个客户端\n");
 

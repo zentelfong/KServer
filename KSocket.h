@@ -5,9 +5,9 @@
 class KSocket
 {
 public:
-	KSocket()
+	KSocket(int af)
 	{
-		m_socket=::socket(AF_INET, SOCK_DGRAM,0);
+		m_socket=::socket(af, SOCK_DGRAM,0);
 		kSetNonblocking(m_socket);
 		bool reuseAddr=true;
 		::setsockopt(m_socket,SOL_SOCKET,SO_REUSEADDR,(char*)&reuseAddr,sizeof(reuseAddr));
@@ -18,20 +18,23 @@ public:
 		closesocket(m_socket);
 	}
 
-	inline int Bind(const sockaddr* addr)
+	inline int Bind(const KAddr* addr)
 	{
-		return ::bind(m_socket,addr,sizeof(sockaddr));
+		return ::bind(m_socket,addr->sockAddr(),addr->sockAddrLen());
 	}
 
-	inline int Sendto(const void *buf, int len, const struct sockaddr *to)
+	inline int Sendto(const void *buf, int len,const KAddr* addr)
 	{
-		return ::sendto(m_socket,(const char*)buf,len,0,to,sizeof(sockaddr));
+		return ::sendto(m_socket,(const char*)buf,len,0,addr->sockAddr(),addr->sockAddrLen());
 	}
 
-	inline int Recvfrom(void *buf, int len, struct sockaddr *from)
+	inline int Recvfrom(void *buf, int len,KAddr *from)
 	{
-		int addrlen=sizeof(sockaddr);
-		return ::recvfrom(m_socket,(char*)buf,len,0,from,&addrlen);
+		sockaddr_in6 inaddr;
+		int addrlen=sizeof(inaddr);
+		int rslt= ::recvfrom(m_socket,(char*)buf,len,0,(sockaddr*)&inaddr,&addrlen);
+		from->set((sockaddr*)&inaddr,addrlen);
+		return rslt;
 	}
 
 	bool CheckReadable(ktime_t time)

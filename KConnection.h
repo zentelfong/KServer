@@ -7,7 +7,7 @@ typedef IUINT32 kcp_t;
 class KTransportBase
 {
 public:
-	virtual int  SendPacket(const struct sockaddr* addr,const char *buf, int len)=0;
+	virtual int  SendPacket(const KAddr* addr,const char *buf, int len)=0;
 	virtual void OutLog(const char *log)=0;
 };
 
@@ -34,21 +34,24 @@ struct KOptions{
 		mtu=1400;
 		sndwnd=32;
 		rcvwnd=32;
-		updateInterval=100;
+		interval=100;
 
 		nodelay=false;
 		fastResend=true;
 		enableCC=true;
+
+		ipv6=false;
 	}
 	ktime_t	connectionLife;//连接的生命时间长度单位毫秒
 	int mtu;//MTU
 	int sndwnd;//发送滑动窗口大小
 	int rcvwnd;//接收滑动窗口大小
-	int updateInterval;//更新时间间隔
+	int interval;//更新时间间隔
 
 	bool nodelay;//是否无延迟发包
 	bool fastResend;//是否开启快速重传
 	bool enableCC;//是否开启流量控制
+	bool ipv6;//是否使用ipv6
 };
 
 
@@ -56,9 +59,9 @@ struct KOptions{
 class KConnection:public KMalloc
 {
 public:
-	KConnection(KTransportBase* transport,kcp_t kcp)
+	KConnection(kcp_t kcp)
 	{
-		m_transPort=transport;
+		m_transPort=NULL;
 		ikcp_ctor(&m_kcp,kcp,this);
 		m_kcp.output=SendPacket;
 		m_kcp.writelog=OutLog;
@@ -66,13 +69,18 @@ public:
 		min_heap_idx=-1;
 		m_checkTime=0;
 		m_lastRecv=kTime();
-		memset(&m_destAddr,0,sizeof(m_destAddr));
 	}
 
 	~KConnection()
 	{
 		ikcp_dtor(&m_kcp);
 	}
+
+	inline void SetTransport(KTransportBase* transport)
+	{
+		m_transPort=transport;
+	}
+
 
 	//更新kcp，返回下次更新时间
 	inline ktime_t Update(ktime_t current)
@@ -92,7 +100,7 @@ public:
 		return ikcp_recv(&m_kcp,buffer,len);
 	}
 
-	inline int RecvPacket(const char *data, long size,ktime_t time,const struct sockaddr* addr)
+	inline int RecvPacket(const char *data, long size,ktime_t time,const KAddr* addr)
 	{
 		m_destAddr=*addr;//更新地址
 		m_lastRecv=time;
@@ -129,7 +137,7 @@ public:
 		return ikcp_check_read_write(&m_kcp,readable,writeable);
 	}
 
-	inline void SetAddr(const sockaddr* addr)
+	inline void SetAddr(const KAddr* addr)
 	{
 		m_destAddr=*addr;
 	}
@@ -164,6 +172,6 @@ private:
 	ikcpcb m_kcp;
 	ktime_t m_checkTime;//下一次检查时间
 	ktime_t  m_lastRecv;//上次接收数据时间
-	struct sockaddr m_destAddr;//对方地址
+	KAddr m_destAddr;//对方地址
 	KTransportBase* m_transPort;
 };

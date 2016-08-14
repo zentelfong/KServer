@@ -7,7 +7,7 @@ int KServer::Wait(KEvent *ev,int evMax,int delay)
 	ktime_t time=kTime();
 
 	char buf[1600];
-	sockaddr addr;
+	KAddr addr;
 
 	int recv=0;
 	
@@ -38,10 +38,11 @@ int KServer::Wait(KEvent *ev,int evMax,int delay)
 				}
 				else
 				{
-					conn=new KConnection(this,kcpid);//新连接到来
+					conn=new KConnection(kcpid);//新连接到来
+					conn->SetTransport(this);
 					conn->SetMTU(m_options.mtu);
 					conn->SetWndSize(m_options.sndwnd,m_options.rcvwnd);
-					conn->SetNodelay(m_options.nodelay,m_options.updateInterval,m_options.fastResend,m_options.enableCC);
+					conn->SetNodelay(m_options.nodelay,m_options.interval,m_options.fastResend,m_options.enableCC);
 
 					m_kcpHash.Set(kcpid,conn);
 					m_kcpHeap.Push(conn);

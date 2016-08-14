@@ -8,7 +8,7 @@ int KClient::Wait(KEvent *ev,int evMax,ktime_t delay)
 	ktime_t time=kTime();
 
 	char buf[1600];
-	sockaddr addr;
+	KAddr addr;
 
 	int recv=0;
 

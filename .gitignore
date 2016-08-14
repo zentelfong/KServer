@@ -11,3 +11,11 @@
 *.lai
 *.la
 *.a
+
+
+*.sdf
+*.suo
+
+build/bin
+build/ipch
+build/obj
