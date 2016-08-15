@@ -134,7 +134,7 @@ public:
 			else
 				return NULL;
 		}
-		const char* Key()
+		key_t Key()
 		{
 			if(m_data)
 				return m_data->key;

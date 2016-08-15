@@ -67,7 +67,7 @@ void RunClient()
 	client.Send(test,strlen(test)+1);
 	KEvent ev[128];
 
-	while(1)
+	for (int i=0;i<10000;++i)//100s
 	{
 		ktime_t time=kTime();
 		int rslt=client.Wait(ev,128,10);
@@ -151,11 +151,8 @@ void RunMultiClient()
 
 int main()
 {
+	KThreadMemPoll poll(1024*1024);
 	KNetInitialized netinit;
-	int rslt=0;
-	KMemPoll poll(1024*1024);
-	poll.SetCurrent();
-	ikcp_allocator(kMalloc,kFree);
 
 	printf("输入s启动服务器，c启动客户端,m启动多个客户端\n");
 

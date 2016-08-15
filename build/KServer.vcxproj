@@ -275,8 +275,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\KClient.cpp" />
+    <ClCompile Include="..\KMemPoll.cpp" />
     <ClCompile Include="..\KServer.cpp" />
-    <ClCompile Include="..\KUtil.cpp" />
     <ClCompile Include="..\dlmalloc.c" />
     <ClCompile Include="..\ikcp.c" />
     <ClCompile Include="..\test.cpp" />

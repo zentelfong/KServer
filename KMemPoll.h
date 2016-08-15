@@ -3,6 +3,7 @@
 #include "dlmalloc.h"
 
 #ifdef WIN32
+#include <assert.h>
 
 #define TLSVAR			DWORD
 #define TLSALLOC(k)	    (*(k)=TlsAlloc(), TLS_OUT_OF_INDEXES==*(k))
@@ -63,25 +64,25 @@ public:
 		return mspace_calloc(m_memSpace,n_elements,elem_size);
 	}
 
-	void SetCurrent()
-	{
-		if (tlsVal==0)
-		{
-			TLSALLOC(&tlsVal);
-		}
-		TLSSET(tlsVal,this);
-	}
+private:
+	mspace m_memSpace;
+};
+
+//当前线程的内存池
+class KThreadMemPoll:public KMemPoll
+{
+public:
+	KThreadMemPoll(size_t capacity);
+	~KThreadMemPoll();
 
 	static KMemPoll* Current()
 	{
-		return (KMemPoll*)TLSGET(tlsVal);
+		return (KMemPoll*)TLSGET(s_tlsVal);
 	}
 
 private:
-	mspace m_memSpace;
-	static TLSVAR tlsVal;
+	static TLSVAR s_tlsVal;
 };
-
 
 //重载C++ new和delete函数
 class KMalloc
@@ -89,7 +90,7 @@ class KMalloc
 public:
 	void * operator new(size_t bytes)
 	{
-		KMemPoll* poll=KMemPoll::Current();
+		KMemPoll* poll=KThreadMemPoll::Current();
 		if (poll)
 		{
 			return poll->Malloc(bytes);
@@ -100,7 +101,7 @@ public:
 
 	void * operator new[](size_t bytes)
 	{
-		KMemPoll* poll=KMemPoll::Current();
+		KMemPoll* poll=KThreadMemPoll::Current();
 		if (poll)
 		{
 			return poll->Malloc(bytes);
@@ -111,7 +112,7 @@ public:
 
 	void operator delete(void *mem)
 	{
-		KMemPoll* poll=KMemPoll::Current();
+		KMemPoll* poll=KThreadMemPoll::Current();
 		if (poll)
 		{
 			poll->Free(mem);
@@ -122,7 +123,7 @@ public:
 
 	void operator delete[](void *mem)
 	{
-		KMemPoll* poll=KMemPoll::Current();
+		KMemPoll* poll=KThreadMemPoll::Current();
 		if (poll)
 		{
 			poll->Free(mem);
@@ -136,7 +137,7 @@ public:
 //C语言风格内存申请，释放函数
 inline void* kMalloc(size_t bytes)
 {
-	KMemPoll* poll=KMemPoll::Current();
+	KMemPoll* poll=KThreadMemPoll::Current();
 	if (poll)
 	{
 		return poll->Malloc(bytes);
@@ -147,7 +148,7 @@ inline void* kMalloc(size_t bytes)
 
 inline void kFree(void* mem)
 {
-	KMemPoll* poll=KMemPoll::Current();
+	KMemPoll* poll=KThreadMemPoll::Current();
 	if (poll)
 	{
 		poll->Free(mem);
@@ -158,7 +159,7 @@ inline void kFree(void* mem)
 
 inline void* kRealloc(void* mem,size_t bytes)
 {
-	KMemPoll* poll=KMemPoll::Current();
+	KMemPoll* poll=KThreadMemPoll::Current();
 	if (poll)
 		return poll->Realloc(mem,bytes);
 	else
