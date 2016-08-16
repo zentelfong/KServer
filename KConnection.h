@@ -81,6 +81,11 @@ public:
 		m_transPort=transport;
 	}
 
+	//设置为流式,默认是包式
+	inline SetType(bool stream)
+	{
+		m_kcp.stream=stream;
+	}
 
 	//更新kcp，返回下次更新时间
 	inline ktime_t Update(ktime_t current)
