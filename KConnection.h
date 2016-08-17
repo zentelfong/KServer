@@ -82,7 +82,7 @@ public:
 	}
 
 	//设置为流式,默认是包式
-	inline SetType(bool stream)
+	inline void SetType(bool stream)
 	{
 		m_kcp.stream=stream;
 	}

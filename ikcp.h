@@ -16,7 +16,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-
 //=====================================================================
 // 32BIT INTEGER DEFINITION 
 //=====================================================================
@@ -173,6 +172,7 @@ typedef struct IQUEUEHEAD iqueue_head;
 	(node)->prev = (head), (node)->next = (head)->next, \
 	(head)->next->prev = (node), (head)->next = (node))
 
+//a two-way rings link list so the last one is head->prev
 #define IQUEUE_ADD_TAIL(node, head) ( \
 	(node)->prev = (head)->prev, (node)->next = (head), \
 	(head)->prev->next = (node), (head)->prev = (node))
@@ -327,6 +327,7 @@ typedef struct IKCPCB ikcpcb;
 #define IKCP_LOG_OUT_PROBE		1024
 #define IKCP_LOG_OUT_WINS		2048
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -393,7 +394,7 @@ int ikcp_waitsnd(const ikcpcb *kcp);
 // nc: 0:normal congestion control(default), 1:disable congestion control
 int ikcp_nodelay(ikcpcb *kcp, int nodelay, int interval, int resend, int nc);
 
-//检查是否可读可写,返回1表示可读或可写,返回0
+//check kcp is readable or writeable, return 1 for readable or writeable
 int ikcp_check_read_write(ikcpcb *kcp,int* readable,int * writeable);
 
 void ikcp_log(ikcpcb *kcp, int mask, const char *fmt, ...);
@@ -401,7 +402,8 @@ void ikcp_log(ikcpcb *kcp, int mask, const char *fmt, ...);
 // setup allocator
 void ikcp_allocator(void* (*new_malloc)(size_t), void (*new_free)(void*));
 
-
+//get length from kcp packet
+int ikcp_packet_len(ikcpcb *kcp,const char *data, long size);
 
 #ifdef __cplusplus
 }

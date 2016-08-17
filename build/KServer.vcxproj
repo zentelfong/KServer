@@ -259,9 +259,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\fec.h" />
     <ClInclude Include="..\KAddr.h" />
     <ClInclude Include="..\KClient.h" />
     <ClInclude Include="..\KConnection.h" />
+    <ClInclude Include="..\KEndian.h" />
+    <ClInclude Include="..\KFEC.h" />
     <ClInclude Include="..\KHashMap.h" />
     <ClInclude Include="..\KHeap.h" />
     <ClInclude Include="..\KMemPoll.h" />
@@ -274,7 +277,9 @@
     <ClInclude Include="..\uthash.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\fec.c" />
     <ClCompile Include="..\KClient.cpp" />
+    <ClCompile Include="..\KFEC.cpp" />
     <ClCompile Include="..\KMemPoll.cpp" />
     <ClCompile Include="..\KServer.cpp" />
     <ClCompile Include="..\dlmalloc.c" />

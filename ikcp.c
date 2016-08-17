@@ -30,6 +30,7 @@ const IUINT32 IKCP_CMD_PUSH = 81;		// cmd: push data
 const IUINT32 IKCP_CMD_ACK  = 82;		// cmd: ack
 const IUINT32 IKCP_CMD_WASK = 83;		// cmd: window probe (ask)
 const IUINT32 IKCP_CMD_WINS = 84;		// cmd: window size (tell)
+
 const IUINT32 IKCP_ASK_SEND = 1;		// need to send IKCP_CMD_WASK
 const IUINT32 IKCP_ASK_TELL = 2;		// need to send IKCP_CMD_WINS
 const IUINT32 IKCP_WND_SND = 32;
@@ -339,6 +340,7 @@ void ikcp_dtor(ikcpcb *kcp)
 			ikcp_free(kcp->acklist);
 		}
 
+
 		kcp->nrcv_buf = 0;
 		kcp->nsnd_buf = 0;
 		kcp->nrcv_que = 0;
@@ -466,7 +468,7 @@ int ikcp_check_read_write(ikcpcb *kcp,int* readable,int * writeable)
 	else
 		*readable=0;
 
-	if (ikcp_waitsnd(kcp)<64)
+	if (ikcp_waitsnd(kcp)<32)
 	{
 		*writeable=1;
 	}
@@ -751,6 +753,30 @@ void ikcp_parse_data(ikcpcb *kcp, IKCPSEG *newseg)
 //	printf("snd(buf=%d, queue=%d)\n", kcp->nsnd_buf, kcp->nsnd_que);
 //	printf("rcv(buf=%d, queue=%d)\n", kcp->nrcv_buf, kcp->nrcv_que);
 #endif
+}
+
+
+int ikcp_packet_len(ikcpcb *kcp,const char *data, long size)
+{
+	int len=0;
+	while (1)
+	{
+		IUINT32 l,conv;
+		if (size<(int)IKCP_OVERHEAD) break;
+
+		data = ikcp_decode32u(data, &conv);
+		if (conv!=kcp->conv)
+			break;
+
+		data = ikcp_decode32u(data+16,&l);
+		if (len>size-IKCP_OVERHEAD)
+			return -1;//error happend
+
+		data+=l;
+		size -= IKCP_OVERHEAD + l;
+		len+=(int)l;
+	}
+	return len;
 }
 
 
