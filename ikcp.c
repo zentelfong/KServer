@@ -756,16 +756,19 @@ void ikcp_parse_data(ikcpcb *kcp, IKCPSEG *newseg)
 }
 
 
-int ikcp_packet_len(ikcpcb *kcp,const char *data, long size)
+int ikcp_packet_len(const char *data, long size)
 {
+	IUINT32 frconv;
 	int len=0;
+	ikcp_decode32u(data, &frconv);
+	
 	while (1)
 	{
 		IUINT32 l,conv;
 		if (size<(int)IKCP_OVERHEAD) break;
 
 		data = ikcp_decode32u(data, &conv);
-		if (conv!=kcp->conv)
+		if (conv!=frconv)
 			break;
 
 		data = ikcp_decode32u(data+16,&l);

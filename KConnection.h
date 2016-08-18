@@ -1,8 +1,8 @@
 #pragma once
 #include "KUtil.h"
+#include "KFEC.h"
 
 typedef IUINT32 kcp_t;
-
 
 class KTransportBase
 {
@@ -41,6 +41,7 @@ struct KOptions{
 		enableCC=true;
 
 		ipv6=false;
+		stream=true;
 	}
 	ktime_t	connectionLife;//连接的生命时间长度单位毫秒
 	int mtu;//MTU
@@ -52,14 +53,26 @@ struct KOptions{
 	bool fastResend;//是否开启快速重传
 	bool enableCC;//是否开启流量控制
 	bool ipv6;//是否使用ipv6
+	bool stream;//流模式
 };
 
 
+
 //连接
+#if FEC_ENABLE
+#pragma warning(disable:4355)
+
+class KConnection:public KMalloc,public KFecPacketTransfer
+{
+public:
+	KConnection(kcp_t kcp)
+		:m_fecEncode(this),m_fecDecode(this)
+#else
 class KConnection:public KMalloc
 {
 public:
 	KConnection(kcp_t kcp)
+#endif
 	{
 		m_transPort=NULL;
 		ikcp_ctor(&m_kcp,kcp,this);
@@ -82,7 +95,7 @@ public:
 	}
 
 	//设置为流式,默认是包式
-	inline void SetType(bool stream)
+	inline void SetStreamMode(bool stream)
 	{
 		m_kcp.stream=stream;
 	}
@@ -109,7 +122,11 @@ public:
 	{
 		m_destAddr=*addr;//更新地址
 		m_lastRecv=time;
+#if FEC_ENABLE
+		return m_fecDecode.DecodePacket(data,size);
+#else
 		return ikcp_input(&m_kcp,data,size);
+#endif
 	}
 
 	inline void Flush(){ikcp_flush(&m_kcp);}
@@ -119,6 +136,10 @@ public:
 
 	inline int SetMTU(int mtu)
 	{
+#if FEC_ENABLE
+		m_fecEncode.SetMtu(mtu);
+		m_fecDecode.SetMtu(mtu);
+#endif
 		return ikcp_setmtu(&m_kcp,mtu);
 	}
 
@@ -156,13 +177,42 @@ public:
 	inline ktime_t GetCheckTime(){return m_checkTime;}
 	inline kcp_t   GetKcpId(){return m_kcp.conv;}
 
+#if FEC_ENABLE
+	void SetFec(fec_t* fec)
+	{
+		m_fecEncode.SetFec(fec);
+		m_fecDecode.SetFec(fec);
+	}
+
+	virtual int SendPacket(KFecPacket* packet)
+	{
+		packet->head.conv=m_kcp.conv;
+		char buf[1500];
+		kWriteScalar<KFecPacketHead>(buf,packet->head);
+		memcpy(buf+sizeof(KFecPacketHead),packet->data,packet->len);
+		//调用UDP发送数据包
+		return m_transPort->SendPacket(&m_destAddr,buf,sizeof(KFecPacketHead)+packet->len);
+	}
+
+	virtual int RecvPacket(const char* data,int len)
+	{
+		//fec解码的包不包含fechead
+		return ikcp_input(&m_kcp,data,len);
+	}
+#endif
+
 public:
 	int min_heap_idx;//小根堆的索引
 private:
 	static int SendPacket(const char *buf, int len, struct IKCPCB *kcp, void *user)
 	{
 		KConnection* pThis=(KConnection*)user;
+#if FEC_ENABLE
+		//使用fec编码后发出去
+		return pThis->m_fecEncode.EncodePacket(buf,len);
+#else
 		return pThis->m_transPort->SendPacket(&pThis->m_destAddr,buf,len);
+#endif
 	}
 
 	static void OutLog(const char *log, struct IKCPCB *kcp, void *user)
@@ -179,4 +229,9 @@ private:
 	ktime_t  m_lastRecv;//上次接收数据时间
 	KAddr m_destAddr;//对方地址
 	KTransportBase* m_transPort;
+
+#if FEC_ENABLE
+	KFecEncode m_fecEncode;
+	KFecDecode m_fecDecode;
+#endif
 };

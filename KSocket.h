@@ -1,6 +1,14 @@
 #pragma once
 #include "KUtil.h"
 
+#ifdef WIN32
+struct iovec
+{
+	int iov_len;
+	char* iov_base;
+};
+#endif
+
 //UDP socketµÄ·â×°
 class KSocket
 {
@@ -22,6 +30,28 @@ public:
 	{
 		return ::bind(m_socket,addr->sockAddr(),addr->sockAddrLen());
 	}
+
+	inline int SendMsg(const iovec* msg,int count,const KAddr* addr)
+	{
+		int res;
+#ifndef WIN32
+		msghdr mh;
+		mh.msg_name = addr->sockAddr();
+		mh.msg_namelen = addr->sockAddrLen();
+		mh.msg_iov = msg;
+		mh.msg_iovlen = count;
+		mh.msg_control = NULL;
+		mh.msg_controllen = 0;
+		mh.msg_flags = 0;
+		res = ::sendmsg(m_iSocket, &mh, 0);
+#else
+		DWORD size = 0;
+		res = ::WSASendTo(m_socket, (LPWSABUF)msg, 2, &size, 0, addr->sockAddr(),addr->sockAddrLen(), NULL, NULL);
+		res = (0 == res) ? size : -1;
+#endif
+		return res;
+	}
+
 
 	inline int Sendto(const void *buf, int len,const KAddr* addr)
 	{

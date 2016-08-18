@@ -10,6 +10,9 @@ public:
 	KServer(int af)
 		:m_socket(af)
 	{
+#if FEC_ENABLE
+		m_fec=fec_new(FEC_DATA_BLOCK_COUNT,FEC_ALL_BLOCK_COUNT);
+#endif
 	}
 
 	~KServer()
@@ -21,6 +24,10 @@ public:
 			delete (*i);
 		}
 		m_kcpHash.Clear();
+
+#if FEC_ENABLE
+		fec_delete(m_fec);
+#endif
 	}
 
 	int Bind(const KAddr* addr){return m_socket.Bind(addr);}
@@ -71,5 +78,8 @@ private:
 	KHeap<KConnection> m_kcpHeap;
 	KHashMap<KConnection> m_kcpHash;
 	KOptions m_options;
+#if FEC_ENABLE
+	fec_t * m_fec;
+#endif
 };
 

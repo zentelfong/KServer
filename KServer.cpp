@@ -39,6 +39,10 @@ int KServer::Wait(KEvent *ev,int evMax,int delay)
 				else
 				{
 					conn=new KConnection(kcpid);//新连接到来
+#if FEC_ENABLE
+					conn->SetFec(m_fec);
+#endif
+					conn->SetStreamMode(m_options.stream);
 					conn->SetTransport(this);
 					conn->SetMTU(m_options.mtu);
 					conn->SetWndSize(m_options.sndwnd,m_options.rcvwnd);

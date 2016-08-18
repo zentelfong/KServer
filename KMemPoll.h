@@ -36,6 +36,9 @@ class KMemPoll
 public:
 	KMemPoll(size_t capacity)
 	{
+#ifdef DEBUG
+		m_allocCount=0;
+#endif
 		m_memSpace=create_mspace(capacity,0);
 	}
 
@@ -46,25 +49,55 @@ public:
 
 	void* Malloc(size_t bytes)
 	{
+#ifdef DEBUG
+		++m_allocCount;
+#endif
 		return mspace_malloc(m_memSpace,bytes);
 	}
 
 	void Free(void* mem)
 	{
+#ifdef DEBUG
+		if(mem)
+			--m_allocCount;
+#endif
 		mspace_free(m_memSpace,mem);
 	}
 
 	void* Realloc(void* mem,size_t bytes)
 	{
+#ifdef DEBUG
+		if(!mem)
+			++m_allocCount;
+#endif
 		return mspace_realloc(m_memSpace,mem,bytes);
 	}
 
 	void* Calloc(size_t n_elements, size_t elem_size)
 	{
+#ifdef DEBUG
+		++m_allocCount;
+#endif
 		return mspace_calloc(m_memSpace,n_elements,elem_size);
 	}
 
+#ifdef DEBUG
+	int GetAllocCount()
+	{
+		return m_allocCount;
+	}
+#else
+	//release不支持
+	int GetAllocCount()
+	{
+		return -1;
+	}
+#endif
+
 private:
+#ifdef DEBUG
+	int m_allocCount;
+#endif
 	mspace m_memSpace;
 };
 
@@ -75,9 +108,9 @@ public:
 	KThreadMemPoll(size_t capacity);
 	~KThreadMemPoll();
 
-	static KMemPoll* Current()
+	static KThreadMemPoll* Current()
 	{
-		return (KMemPoll*)TLSGET(s_tlsVal);
+		return (KThreadMemPoll*)TLSGET(s_tlsVal);
 	}
 
 private:
@@ -112,6 +145,7 @@ public:
 
 	void operator delete(void *mem)
 	{
+		if (!mem) return;
 		KMemPoll* poll=KThreadMemPoll::Current();
 		if (poll)
 		{
@@ -123,6 +157,7 @@ public:
 
 	void operator delete[](void *mem)
 	{
+		if (!mem) return;
 		KMemPoll* poll=KThreadMemPoll::Current();
 		if (poll)
 		{
@@ -148,6 +183,7 @@ inline void* kMalloc(size_t bytes)
 
 inline void kFree(void* mem)
 {
+	if (!mem) return;
 	KMemPoll* poll=KThreadMemPoll::Current();
 	if (poll)
 	{
@@ -169,7 +205,10 @@ inline void* kRealloc(void* mem,size_t bytes)
 
 
 
-
+/*
+注意：
+内存池分配的对象必须由分配的线程进行释放否则会导致崩溃的问题;
+*/
 
 
 

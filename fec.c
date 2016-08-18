@@ -247,11 +247,10 @@ _invert_mat(gf* src, unsigned k) {
     unsigned icol = 0;
     unsigned row, col, i, ix;
 
-    unsigned* indxc = (unsigned*) fec_malloc (k * sizeof(unsigned));
-    unsigned* indxr = (unsigned*) fec_malloc (k * sizeof(unsigned));
-    unsigned* ipiv = (unsigned*) fec_malloc (k * sizeof(unsigned));
-    gf *id_row = NEW_GF_MATRIX (1, k);
-
+    unsigned* indxc = (unsigned*) alloca (k * sizeof(unsigned));
+    unsigned* indxr = (unsigned*) alloca (k * sizeof(unsigned));
+    unsigned* ipiv = (unsigned*) alloca (k * sizeof(unsigned));
+    gf *id_row = (gf*)alloca(k * sizeof(gf));
     memset (id_row, '\0', k * sizeof (gf));
     /*
      * ipiv marks elements already used as pivots.

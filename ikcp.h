@@ -403,7 +403,7 @@ void ikcp_log(ikcpcb *kcp, int mask, const char *fmt, ...);
 void ikcp_allocator(void* (*new_malloc)(size_t), void (*new_free)(void*));
 
 //get length from kcp packet
-int ikcp_packet_len(ikcpcb *kcp,const char *data, long size);
+int ikcp_packet_len(const char *data, long size);
 
 #ifdef __cplusplus
 }

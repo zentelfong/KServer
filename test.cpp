@@ -2,6 +2,8 @@
 #include "KServer.h"
 #include "KClient.h"
 
+//单位s
+#define RUN_SECONDS 10
 
 void RunServer()
 {
@@ -19,7 +21,7 @@ void RunServer()
 	assert(rslt==0);
 	KEvent ev[128];
 
-	while(1)
+	for (int i=0;i<RUN_SECONDS*100;++i)//10s
 	{
 		ktime_t time=kTime();
 		rslt=server.Wait(ev,128,10);
@@ -64,10 +66,11 @@ void RunClient()
 	client.Connect("127.0.0.1",9091);
 
 	const char* test="hello world!";
-	client.Send(test,strlen(test)+1);
+	for(int i=0;i<32;++i)
+		client.Send(test,strlen(test)+1);
 	KEvent ev[128];
 
-	for (int i=0;i<10000;++i)//100s
+	for (int i=0;i<RUN_SECONDS*100;++i)//10s
 	{
 		ktime_t time=kTime();
 		int rslt=client.Wait(ev,128,10);
@@ -123,7 +126,7 @@ void RunMultiClient()
 
 	KEvent ev[128];
 
-	while(1)
+	for (int i=0;i<RUN_SECONDS*100;++i)//10s
 	{
 		ktime_t time=kTime();
 
@@ -149,10 +152,120 @@ void RunMultiClient()
 }
 
 
+class FecTransport:public KFecPacketTransfer
+{
+public:
+	FecTransport()
+		:m_encode(NULL),m_decode(NULL)
+	{
+		send=0;
+		recv=0;
+	}
+
+	virtual int SendPacket(KFecPacket* packet)
+	{
+		
+
+		char buf[FEC_MTU+sizeof(KFecPacket)];
+		kWriteScalar<KFecPacketHead>(buf,packet->head);
+		memcpy(buf+sizeof(KFecPacketHead),packet->data,packet->len);
+
+		//5号包和6号包丢失
+		if(packet->head.pckid!=5 && packet->head.pckid!=0)
+		{
+			printf("send packet %d,%d\n",packet->head.grpid,packet->head.pckid);
+			return m_decode->DecodePacket(buf,packet->len+sizeof(KFecPacketHead))+sizeof(KFecPacketHead);
+		}
+		else
+		{
+			printf("丢失了包 %d,%d\n",packet->head.grpid,packet->head.pckid);
+			return packet->len+sizeof(KFecPacketHead);
+		}
+	}
+
+	//不含kfechead
+	virtual int RecvPacket(const char* data,int len)
+	{
+		printf("recv packet %d %s\n",recv++,data);
+		//return m_encode->EncodePacket(data,len);
+		return len;
+	}
+
+	int send;
+	int recv;
+	KFecEncode* m_encode;
+	KFecDecode* m_decode;
+};
+
+
+void TestFEC()
+{
+	int len=sizeof(KFecPacketHead);
+
+	fec_t* fec= fec_new(FEC_DATA_BLOCK_COUNT,FEC_ALL_BLOCK_COUNT);
+
+	FecTransport transport;
+	KFecEncode encode(&transport);
+	
+	KFecDecode decode(&transport);
+	encode.SetFec(fec);
+	decode.SetFec(fec);
+	transport.m_encode=&encode;
+	transport.m_decode=&decode;
+
+	for (int i=0;i<20;++i)
+	{
+		char buf[]="123456789123456789";
+		buf[0]='a'+i;
+		encode.EncodePacket(buf,strlen(buf)+1);
+	}
+	
+	fec_delete(fec);
+}
+
+void TestMalloc()
+{
+#define TEST_COUNT 1000000
+
+	DWORD tick=GetTickCount();
+	KMemPoll* poll=KThreadMemPoll::Current();
+	for (int i=0;i<TEST_COUNT;++i)
+	{
+		void* mem=poll->Malloc(i%2048);
+		poll->Free(mem);
+	}
+	printf("KMemPoll耗时 %d\n",GetTickCount()-tick);
+
+	tick=GetTickCount();
+	for (int i=0;i<TEST_COUNT;++i)
+	{
+		void* mem=kMalloc(i%2048);
+		kFree(mem);
+	}
+	printf("kmalloc耗时 %d\n",GetTickCount()-tick);
+
+	tick=GetTickCount();
+	for (int i=0;i<TEST_COUNT;++i)
+	{
+		void* mem=malloc(i%2048);
+		free(mem);
+	}
+	printf("malloc耗时 %d\n",GetTickCount()-tick);
+
+/*
+win7 i7 3.4GHZ测试结果如下：
+KMemPoll耗时 265
+kmalloc耗时 390
+malloc耗时 1732	
+*/
+}
+
 int main()
 {
 	KThreadMemPoll poll(1024*1024);
 	KNetInitialized netinit;
+	//TestFEC();
+	//TestMalloc();
 
 	printf("输入s启动服务器，c启动客户端,m启动多个客户端\n");
 
@@ -169,6 +282,8 @@ int main()
 	{
 		RunMultiClient();
 	}
-	getchar();
+
+	printf("AllocCount %d\n",poll.GetAllocCount());
+	system("pause");
 	return 0;
 }

@@ -1,8 +1,6 @@
 #ifndef _KENDIAN_H_
 #define _KENDIAN_H_
 
-#include <stdint.h>
-
 #ifndef K_BIG_ENDIAN
     #ifdef _BIG_ENDIAN_
         #if _BIG_ENDIAN_
