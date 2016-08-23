@@ -60,7 +60,11 @@ struct KOptions{
 
 //Á¬½Ó
 #if FEC_ENABLE
+
+#ifdef _MSC_VER
 #pragma warning(disable:4355)
+#endif
+
 
 class KConnection:public KMalloc,public KFecPacketTransfer
 {

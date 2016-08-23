@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="support">
+      <UniqueIdentifier>{E2833EB1-4E63-BD4C-577B-4823C3D923AE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="support\fec">
+      <UniqueIdentifier>{FF29DD72-6BDF-5568-F4D3-4F3F60884C6C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="support\kcp">
+      <UniqueIdentifier>{0F3FDD72-7BF4-5568-04E9-4F3F709D4C6C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="support\lz4">
+      <UniqueIdentifier>{0B46DD72-77FB-5568-00F0-4F3F6CA44C6C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="support\malloc">
+      <UniqueIdentifier>{89E1D688-75AF-CA8E-5E43-3BB54AB0A6F3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="support\xxhash">
+      <UniqueIdentifier>{45741DA4-3142-11AA-1AD6-81D00643ED0E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\KAddr.h" />
+    <ClInclude Include="..\KClient.h" />
+    <ClInclude Include="..\KConnection.h" />
+    <ClInclude Include="..\KEndian.h" />
+    <ClInclude Include="..\KFEC.h" />
+    <ClInclude Include="..\KHashMap.h" />
+    <ClInclude Include="..\KHeap.h" />
+    <ClInclude Include="..\KMemPoll.h" />
+    <ClInclude Include="..\KServer.h" />
+    <ClInclude Include="..\KSocket.h" />
+    <ClInclude Include="..\KSysApi.h" />
+    <ClInclude Include="..\KUtil.h" />
+    <ClInclude Include="..\support\fec\fec.h">
+      <Filter>support\fec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\support\kcp\ikcp.h">
+      <Filter>support\kcp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\support\lz4\lz4.h">
+      <Filter>support\lz4</Filter>
+    </ClInclude>
+    <ClInclude Include="..\support\lz4\lz4hc.h">
+      <Filter>support\lz4</Filter>
+    </ClInclude>
+    <ClInclude Include="..\support\malloc\dlmalloc.h">
+      <Filter>support\malloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\support\uthash.h">
+      <Filter>support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\support\xxhash\xxhash.h">
+      <Filter>support\xxhash</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\KClient.cpp" />
+    <ClCompile Include="..\KFEC.cpp" />
+    <ClCompile Include="..\KMemPoll.cpp" />
+    <ClCompile Include="..\KServer.cpp" />
+    <ClCompile Include="..\support\fec\fec.c">
+      <Filter>support\fec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\support\kcp\ikcp.c">
+      <Filter>support\kcp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\support\lz4\lz4.c">
+      <Filter>support\lz4</Filter>
+    </ClCompile>
+    <ClCompile Include="..\support\lz4\lz4hc.c">
+      <Filter>support\lz4</Filter>
+    </ClCompile>
+    <ClCompile Include="..\support\malloc\dlmalloc.c">
+      <Filter>support\malloc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\support\xxhash\xxhash.c">
+      <Filter>support\xxhash</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test.cpp" />
+  </ItemGroup>
+</Project>

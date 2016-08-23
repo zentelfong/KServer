@@ -18,15 +18,7 @@ int KServer::Wait(KEvent *ev,int evMax,int delay)
 			recv=m_socket.Recvfrom(buf,sizeof(buf),&addr);
 			if (recv>4)
 			{
-				kcp_t kcpid=0;
-#if IWORDS_BIG_ENDIAN
-				kcpid = *(const unsigned char*)(buf + 3);
-				kcpid = *(const unsigned char*)(buf + 2) + (kcpid << 8);
-				kcpid = *(const unsigned char*)(buf + 1) + (kcpid << 8);
-				kcpid = *(const unsigned char*)(buf + 0) + (kcpid << 8);
-#else 
-				kcpid = *(const kcp_t*)buf;
-#endif
+				kcp_t kcpid=kReadScalar<kcp_t>(buf);
 				KConnection * conn=m_kcpHash.Find(kcpid);
 				if (conn)
 				{

@@ -36,11 +36,11 @@ project "KServer"
 	kind "ConsoleApp"
 	language "C++"
 	
-	includedirs{"./"}
+	includedirs{"./","./support/"}
 	
 	files { 
-		"*.h", "*.cpp",
-		"*.c",
+		"*.h", "*.cpp","*.c",
+		"support/**.h", "support/**.cpp","support/**.c",
 	}
 
 

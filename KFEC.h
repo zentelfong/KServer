@@ -1,7 +1,7 @@
 ﻿#ifndef _KFEC_H_
 #define _KFEC_H_
 
-#include "fec.h"
+#include "fec/fec.h"
 #include "KUtil.h"
 #include "KEndian.h"
 

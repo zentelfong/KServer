@@ -1,6 +1,6 @@
 #pragma once
 #include "KSysApi.h"
-#include "ikcp.h"
+#include "kcp/ikcp.h"
 #include "KHeap.h"
 #include "KHashMap.h"
 #include "KMemPoll.h"

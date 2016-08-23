@@ -1,6 +1,6 @@
 #include "KMemPoll.h"
-#include "ikcp.h"
-#include "fec.h"
+#include "kcp/ikcp.h"
+#include "fec/fec.h"
 
 #ifdef WIN32
 #pragma comment(lib,"Ws2_32.lib")
