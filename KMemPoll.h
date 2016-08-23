@@ -181,6 +181,17 @@ inline void* kMalloc(size_t bytes)
 		return malloc(bytes);
 }
 
+inline void* kCalloc(size_t count,size_t bytes)
+{
+	KMemPoll* poll=KThreadMemPoll::Current();
+	if (poll)
+	{
+		return poll->Calloc(count,bytes);
+	}
+	else
+		return calloc(count,bytes);
+}
+
 inline void kFree(void* mem)
 {
 	if (!mem) return;

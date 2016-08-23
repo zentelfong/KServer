@@ -278,6 +278,7 @@
     <ClInclude Include="..\support\malloc\dlmalloc.h" />
     <ClInclude Include="..\support\uthash.h" />
     <ClInclude Include="..\support\xxhash\xxhash.h" />
+    <ClInclude Include="KRingBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\KClient.cpp" />

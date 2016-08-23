@@ -46,6 +46,15 @@ inline ktime_t kTime()
 
 #endif
 
+#ifndef kmax
+#define kmax(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef kmin
+#define kmin(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+
+
 
 #ifdef WIN32
 inline ktime_t kTime() {

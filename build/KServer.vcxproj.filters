@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="support">
@@ -54,6 +54,7 @@
     <ClInclude Include="..\support\xxhash\xxhash.h">
       <Filter>support\xxhash</Filter>
     </ClInclude>
+    <ClInclude Include="KRingBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\KClient.cpp" />
