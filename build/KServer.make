@@ -16,7 +16,7 @@ ifeq ($(config),debug_win32)
   TARGET = $(TARGETDIR)/KServer.exe
   OBJDIR = obj/Win32/Debug
   DEFINES += -D_WIN32 -DWIN32 -DDEBUG
-  INCLUDES += -I..
+  INCLUDES += -I.. -I../support
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m32 -g -Og
@@ -43,7 +43,7 @@ ifeq ($(config),debug_win64)
   TARGET = $(TARGETDIR)/KServer.exe
   OBJDIR = obj/Win64/Debug
   DEFINES += -D_WIN32 -DWIN32 -DDEBUG
-  INCLUDES += -I..
+  INCLUDES += -I.. -I../support
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -Og
@@ -70,7 +70,7 @@ ifeq ($(config),debug_linux)
   TARGET = $(TARGETDIR)/KServer
   OBJDIR = obj/Linux/Debug
   DEFINES += -DLINUX -Dlinux -DPOSIX -DDEBUG
-  INCLUDES += -I..
+  INCLUDES += -I.. -I../support
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -Og
@@ -97,7 +97,7 @@ ifeq ($(config),release_win32)
   TARGET = $(TARGETDIR)/KServer.exe
   OBJDIR = obj/Win32/Release
   DEFINES += -D_WIN32 -DWIN32 -DNDEBUG
-  INCLUDES += -I..
+  INCLUDES += -I.. -I../support
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m32 -O3 -msse2
@@ -124,7 +124,7 @@ ifeq ($(config),release_win64)
   TARGET = $(TARGETDIR)/KServer.exe
   OBJDIR = obj/Win64/Release
   DEFINES += -D_WIN32 -DWIN32 -DNDEBUG
-  INCLUDES += -I..
+  INCLUDES += -I.. -I../support
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O3 -msse2
@@ -151,7 +151,7 @@ ifeq ($(config),release_linux)
   TARGET = $(TARGETDIR)/KServer
   OBJDIR = obj/Linux/Release
   DEFINES += -DLINUX -Dlinux -DPOSIX -DNDEBUG
-  INCLUDES += -I..
+  INCLUDES += -I.. -I../support
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O3 -msse2
@@ -174,10 +174,17 @@ endif
 
 OBJECTS := \
 	$(OBJDIR)/KClient.o \
+	$(OBJDIR)/KCompressor.o \
+	$(OBJDIR)/KFEC.o \
+	$(OBJDIR)/KMemPoll.o \
 	$(OBJDIR)/KServer.o \
-	$(OBJDIR)/KUtil.o \
-	$(OBJDIR)/dlmalloc.o \
+	$(OBJDIR)/fec.o \
+	$(OBJDIR)/http_parser.o \
 	$(OBJDIR)/ikcp.o \
+	$(OBJDIR)/lz4.o \
+	$(OBJDIR)/lz4hc.o \
+	$(OBJDIR)/dlmalloc.o \
+	$(OBJDIR)/xxhash.o \
 	$(OBJDIR)/test.o \
 
 RESOURCES := \
@@ -239,16 +246,37 @@ endif
 $(OBJDIR)/KClient.o: ../KClient.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/KCompressor.o: ../KCompressor.cpp
+	@echo $(notdir $<)
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/KFEC.o: ../KFEC.cpp
+	@echo $(notdir $<)
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/KMemPoll.o: ../KMemPoll.cpp
+	@echo $(notdir $<)
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/KServer.o: ../KServer.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/KUtil.o: ../KUtil.cpp
-	@echo $(notdir $<)
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/dlmalloc.o: ../dlmalloc.c
+$(OBJDIR)/fec.o: ../support/fec/fec.c
 	@echo $(notdir $<)
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/ikcp.o: ../ikcp.c
+$(OBJDIR)/http_parser.o: ../support/http_parser/http_parser.c
+	@echo $(notdir $<)
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/ikcp.o: ../support/kcp/ikcp.c
+	@echo $(notdir $<)
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/lz4.o: ../support/lz4/lz4.c
+	@echo $(notdir $<)
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/lz4hc.o: ../support/lz4/lz4hc.c
+	@echo $(notdir $<)
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/dlmalloc.o: ../support/malloc/dlmalloc.c
+	@echo $(notdir $<)
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/xxhash.o: ../support/xxhash/xxhash.c
 	@echo $(notdir $<)
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/test.o: ../test.cpp

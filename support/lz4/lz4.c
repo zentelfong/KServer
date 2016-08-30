@@ -108,7 +108,7 @@ static void* (*lz4_calloc_hook)(size_t,size_t) = calloc;
 static void (*lz4_free_hook)(void *) = free;
 
 // redefine allocator
-void lz4_allocator(void* (*new_calloc)(size_t,size_t), void (*new_free)(void*))
+static void lz4_allocator(void* (*new_calloc)(size_t,size_t), void (*new_free)(void*))
 {
 	lz4_calloc_hook = new_calloc;
 	lz4_free_hook = new_free;

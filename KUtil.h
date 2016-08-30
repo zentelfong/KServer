@@ -1,10 +1,15 @@
 #pragma once
 #include "KSysApi.h"
 #include "kcp/ikcp.h"
+#include "xxhash/xxhash.h"
 #include "KHeap.h"
 #include "KHashMap.h"
 #include "KMemPoll.h"
 #include "KAddr.h"
+
+#ifdef _MSC_VER
+#pragma warning(disable:4355)
+#endif
 
 inline int kSetNonblocking(SOCKET fd)
 {
@@ -46,6 +51,21 @@ inline ktime_t kTime()
 
 #endif
 
+#ifdef WIN32
+inline ktime_t kTime() {
+	return GetTickCount();
+}
+
+
+struct iovec
+{
+	int iov_len;
+	char* iov_base;
+};
+
+#endif
+
+
 #ifndef kmax
 #define kmax(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
@@ -56,8 +76,3 @@ inline ktime_t kTime()
 
 
 
-#ifdef WIN32
-inline ktime_t kTime() {
-	return GetTickCount();
-}
-#endif

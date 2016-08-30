@@ -67,4 +67,45 @@ template<typename T> void kWriteScalar(void *p, T t) {
   *reinterpret_cast<T *>(p) = kEndianScalar(t);
 }
 
+#ifdef _MSC_VER
+inline uint16_t kByteSwap(uint16_t x) { return _byteswap_ushort(x); }
+inline uint32_t kByteSwap(uint32_t x) { return _byteswap_ulong(x); }
+inline uint64_t kByteSwap(uint64_t x) { return _byteswap_uint64(x); }
+#else
+#if (((__GNUC__) << 16) + (__GNUC_MINOR__)) >= ((4 << 16) + 8)
+inline uint16_t kByteSwap(uint16_t x) { return __builtin_bswap16(x); }
+#else
+inline uint16_t kByteSwap(uint16_t x) { return (x >> 8) | (x << 8); }
+#endif
+inline uint32_t kByteSwap(uint32_t x) { return __builtin_bswap32(x); }
+inline uint64_t kByteSwap(uint64_t x) { return __builtin_bswap64(x); }
+#endif
+
+inline uint16_t kByteSwapLE(uint16_t x)
+{
+#if K_BIG_ENDIAN
+	return kByteSwap(x);
+#else
+	return x;
+#endif
+}
+
+inline uint32_t kByteSwapLE(uint32_t x)
+{
+#if K_BIG_ENDIAN
+	return kByteSwap(x);
+#else
+	return x;
+#endif
+}
+
+inline uint64_t kByteSwapLE(uint64_t x)
+{
+#if K_BIG_ENDIAN
+	return kByteSwap(x);
+#else
+	return x;
+#endif
+}
+
 #endif

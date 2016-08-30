@@ -1,20 +1,20 @@
 #pragma once
 #include "KUtil.h"
+#include "xxhash/xxhash.h"
 
-#ifdef WIN32
-struct iovec
-{
-	int iov_len;
-	char* iov_base;
-};
-#endif
 
-//UDP socket的封装
+//UDP socket的封装,添加数据加密及数据验证
 class KSocket
 {
 public:
+	enum{
+		XXHASH_SEED=0x0A521248,
+		ENCRYPT_SALT=0x242F29388D239D58
+	};
+
 	KSocket(int af)
 	{
+		memset(&XXH32_state_t,0,sizeof(XXH32_state_t));
 		m_socket=::socket(af, SOCK_DGRAM,0);
 		kSetNonblocking(m_socket);
 		bool reuseAddr=true;
@@ -31,6 +31,42 @@ public:
 		return ::bind(m_socket,addr->sockAddr(),addr->sockAddrLen());
 	}
 
+	//加密数据包
+	int EncodePacket(char *buf, int len)
+	{
+		//对所有数据进行校验
+		XXH32_reset(&m_xxhash,XXHASH_SEED);
+		XXH32_update(&m_xxhash,buf,len);
+		uint32_t hashVal=XXH32_digest(&m_xxhash);
+		uint64_t key= hashVal * ENCRYPT_SALT + hashVal;
+		//对data部分进行加密
+		char* data=buf;
+		int fLen=len/8*8;//fLen为8的倍数
+
+		while (data<=fLen)
+		{
+			*(uint64_t*)data^=key;
+			data+=8;
+		}
+
+		//尾部少于8字节
+		char key2[8];
+		*(uint64_t*)key2=ENCRYPT_SALT;
+		for(int i=fLen;i<len;++i)
+		{
+			buf[fLen]^=key2[i-fLen];
+		}
+
+
+	}
+
+
+	/////////////////////////////////////////////////////////////////////////
+	//            |                  |            |                         |
+	//   trnsid   |      data        |    xhash 4 |           end  4        |
+	//            |                  |            |                         |
+	/////////////////////////////////////////////////////////////////////////
+
 	inline int SendMsg(const iovec* msg,int count,const KAddr* addr)
 	{
 		int res;
@@ -46,7 +82,7 @@ public:
 		res = ::sendmsg(m_iSocket, &mh, 0);
 #else
 		DWORD size = 0;
-		res = ::WSASendTo(m_socket, (LPWSABUF)msg, 2, &size, 0, addr->sockAddr(),addr->sockAddrLen(), NULL, NULL);
+		res = ::WSASendTo(m_socket, (LPWSABUF)msg, count, &size, 0, addr->sockAddr(),addr->sockAddrLen(), NULL, NULL);
 		res = (0 == res) ? size : -1;
 #endif
 		return res;
@@ -88,6 +124,7 @@ public:
 
 private:
 	SOCKET   m_socket;
+	XXH32_state_t m_xxhash;
 };
 
 

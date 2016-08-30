@@ -3,7 +3,7 @@
 .NOTPARALLEL:
 
 ifndef config
-  config=debug_win32
+  config=release_win32
 endif
 
 ifndef verbose

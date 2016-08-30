@@ -7,6 +7,9 @@
     <Filter Include="support\fec">
       <UniqueIdentifier>{FF29DD72-6BDF-5568-F4D3-4F3F60884C6C}</UniqueIdentifier>
     </Filter>
+    <Filter Include="support\http_parser">
+      <UniqueIdentifier>{BD5C8DF3-29BE-6A01-B22B-B1B31E8CA1C0}</UniqueIdentifier>
+    </Filter>
     <Filter Include="support\kcp">
       <UniqueIdentifier>{0F3FDD72-7BF4-5568-04E9-4F3F709D4C6C}</UniqueIdentifier>
     </Filter>
@@ -36,6 +39,9 @@
     <ClInclude Include="..\support\fec\fec.h">
       <Filter>support\fec</Filter>
     </ClInclude>
+    <ClInclude Include="..\support\http_parser\http_parser.h">
+      <Filter>support\http_parser</Filter>
+    </ClInclude>
     <ClInclude Include="..\support\kcp\ikcp.h">
       <Filter>support\kcp</Filter>
     </ClInclude>
@@ -54,7 +60,6 @@
     <ClInclude Include="..\support\xxhash\xxhash.h">
       <Filter>support\xxhash</Filter>
     </ClInclude>
-    <ClInclude Include="KRingBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\KClient.cpp" />
@@ -63,6 +68,9 @@
     <ClCompile Include="..\KServer.cpp" />
     <ClCompile Include="..\support\fec\fec.c">
       <Filter>support\fec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\support\http_parser\http_parser.c">
+      <Filter>support\http_parser</Filter>
     </ClCompile>
     <ClCompile Include="..\support\kcp\ikcp.c">
       <Filter>support\kcp</Filter>

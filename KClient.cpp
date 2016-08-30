@@ -38,7 +38,7 @@ int KClient::Wait(KEvent *ev,int evMax,ktime_t delay)
 		} while (1);
 	}
 
-	if (time - m_connection.GetLastRecvTime() > m_options.connectionLife)//3·ÖÖÓ³¬Ê±
+	if (time - m_connection.GetLastRecvTime() > m_options.timeOutInterval)
 	{
 		if(count<evMax)
 		{
@@ -46,6 +46,17 @@ int KClient::Wait(KEvent *ev,int evMax,ktime_t delay)
 			ev[count].event=KEV_TIMEOUT;
 			++count;
 		}
+	}
+	else if (time - m_connection.GetLastSendTime() > m_options.keepAliveInterval)
+	{
+		m_connection.SetLastSendTime(time);
+		char buf[24]={0};
+		KControlPacketHead keepAlivePacket;
+		keepAlivePacket.unuse=0;
+		keepAlivePacket.kcpid=m_connection.GetKcpId();
+		keepAlivePacket.controlType=KCT_KEEP_ALIVE;
+		keepAlivePacket.Write(buf);
+		m_socket.Sendto(buf,sizeof(buf),&m_connection.m_destAddr);
 	}
 	else
 	{

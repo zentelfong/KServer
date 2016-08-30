@@ -19,39 +19,91 @@ int KServer::Wait(KEvent *ev,int evMax,int delay)
 			if (recv>4)
 			{
 				kcp_t kcpid=kReadScalar<kcp_t>(buf);
-				KConnection * conn=m_kcpHash.Find(kcpid);
-				if (conn)
+				if (kcpid>0)//如果收到kcpid为0表示客户端的keepalive
 				{
-					conn->RecvPacket(buf,recv,time,&addr);
-					//下一个周期更新
-					m_kcpHeap.Erase(conn);
-					conn->m_checkTime=0;
-					m_kcpHeap.Push(conn);
+					KConnection * conn=m_kcpHash.Find(kcpid);
+					if (conn)
+					{
+						conn->RecvPacket(buf,recv,time,&addr);
+						//下一个周期更新
+						m_kcpHeap.Erase(conn);
+						conn->m_checkTime=0;
+						m_kcpHeap.Push(conn);
+					}
+					else
+					{
+						conn=new KConnection(kcpid);//新连接到来
+	#if FEC_ENABLE
+						conn->SetFec(m_fec);
+	#endif
+						conn->SetStreamMode(m_options.stream);
+						conn->SetSocket(&m_socket);
+						conn->SetMTU(m_options.mtu);
+						conn->SetWndSize(m_options.sndwnd,m_options.rcvwnd);
+						conn->SetNodelay(m_options.nodelay,m_options.interval,m_options.fastResend,m_options.enableCC);
+
+						m_kcpHash.Set(kcpid,conn);
+						m_kcpHeap.Push(conn);
+						conn->RecvPacket(buf,recv,time,&addr);
+
+						printf("new connection %d\n",kcpid);
+
+						//添加到event中
+						if(count<evMax)
+						{
+							ev[count].kcp=kcpid;
+							ev[count].event=KEV_NEW_CONN;
+							++count;
+						}
+					}
 				}
 				else
 				{
-					conn=new KConnection(kcpid);//新连接到来
-#if FEC_ENABLE
-					conn->SetFec(m_fec);
-#endif
-					conn->SetStreamMode(m_options.stream);
-					conn->SetTransport(this);
-					conn->SetMTU(m_options.mtu);
-					conn->SetWndSize(m_options.sndwnd,m_options.rcvwnd);
-					conn->SetNodelay(m_options.nodelay,m_options.interval,m_options.fastResend,m_options.enableCC);
-
-					m_kcpHash.Set(kcpid,conn);
-					m_kcpHeap.Push(conn);
-					conn->RecvPacket(buf,recv,time,&addr);
-
-					printf("new connection %d\n",kcpid);
-
-					//添加到event中
-					if(count<evMax)
+					//KServer的控制数据包,keepAlive，connect等
+					KControlPacketHead packetHead;
+					packetHead.Read(buf);
+					switch (packetHead.controlType)
 					{
-						ev[count].kcp=kcpid;
-						ev[count].event=KEV_NEW_CONN;
-						++count;
+					case KCT_KEEP_ALIVE:
+						{
+							KConnection * conn=m_kcpHash.Find(kcpid);
+							if (conn)
+							{
+								printf("keepAlive %d \n",packetHead.kcpid);
+								conn->SetLastRecvTime(time);
+
+								char buf[24]={0};
+								KControlPacketHead keepAlivePacket;
+								keepAlivePacket.unuse=0;
+								keepAlivePacket.kcpid=conn->GetKcpId();
+								keepAlivePacket.controlType=KCT_KEEP_ALIVE;
+								keepAlivePacket.Write(buf);
+								m_socket.Sendto(buf,sizeof(buf),&conn->m_destAddr);
+							}
+							break;
+						}
+
+					case KCT_CONNECT:
+
+						break;
+					case KCT_CLOSE:
+						{
+							KConnection * conn=m_kcpHash.Find(kcpid);
+							if (conn)
+							{
+								m_kcpHeap.Erase(conn);
+								m_kcpHash.Remove(kcpid);
+								delete conn;
+
+								if(count<evMax)
+								{
+									ev[count].kcp=kcpid;
+									ev[count].event=KEV_CLOSE;
+									++count;
+								}
+							}
+							break;
+						}
 					}
 				}
 			}
@@ -66,7 +118,7 @@ int KServer::Wait(KEvent *ev,int evMax,int delay)
 		m_kcpHeap.Pop();
 		kcp_t kcpId=conn->GetKcpId();
 
-		if (time - conn->GetLastRecvTime() > m_options.connectionLife)//3分钟超时
+		if (time - conn->GetLastRecvTime() > m_options.timeOutInterval)//3分钟超时
 		{
 			m_kcpHash.Remove(kcpId);
 			delete conn;

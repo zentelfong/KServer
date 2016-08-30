@@ -1,16 +1,9 @@
 #pragma once
 #include "KUtil.h"
 #include "KFEC.h"
+#include "KSocket.h"
 
 typedef IUINT32 kcp_t;
-
-class KTransportBase
-{
-public:
-	virtual int  SendPacket(const KAddr* addr,const char *buf, int len)=0;
-	virtual void OutLog(const char *log)=0;
-};
-
 
 enum KEVENT_TYPE{
 	KEV_NEW_CONN=0x1,
@@ -18,7 +11,38 @@ enum KEVENT_TYPE{
 	KEV_WRITE=0x4,
 	KEV_ERR=0x8,
 	KEV_TIMEOUT=0x10,
+	KEV_CLOSE=0x20,
 };
+
+//心跳包等类型
+enum KCONTROL_TYPE{
+	KCT_NONE,
+	KCT_CONNECT,//连接控制类型
+	KCT_CLOSE,//关闭连接类型
+	KCT_KEEP_ALIVE,//保持连接及心跳
+};
+
+struct KControlPacketHead
+{
+	void Read(const char* buf)
+	{
+		unuse=kReadScalar<uint32_t>(buf);
+		controlType=kReadScalar<uint32_t>(buf+4);
+		kcpid=kReadScalar<uint32_t>(buf+8);
+	}
+
+	void Write(char* buf)
+	{
+		kWriteScalar(buf,unuse);
+		kWriteScalar(buf+4,controlType);
+		kWriteScalar(buf+8,kcpid);
+	}
+
+	uint32_t unuse;//为0
+	uint32_t controlType;//控制类型
+	uint32_t kcpid;//连接的id
+};
+
 
 //类似于epoll
 struct KEvent
@@ -30,7 +54,8 @@ struct KEvent
 struct KOptions{
 	KOptions()
 	{
-		connectionLife=60*1000;//默认1分钟
+		timeOutInterval=60*1000;//默认1分钟
+		keepAliveInterval=15*1000;//默认15s发送一次心跳
 		mtu=1400;
 		sndwnd=32;
 		rcvwnd=32;
@@ -42,8 +67,11 @@ struct KOptions{
 
 		ipv6=false;
 		stream=true;
+
+		minrto=100;
 	}
-	ktime_t	connectionLife;//连接的生命时间长度单位毫秒
+	ktime_t	timeOutInterval;//超时时间间隔
+	ktime_t keepAliveInterval;//心跳时间间隔
 	int mtu;//MTU
 	int sndwnd;//发送滑动窗口大小
 	int rcvwnd;//接收滑动窗口大小
@@ -54,18 +82,13 @@ struct KOptions{
 	bool enableCC;//是否开启流量控制
 	bool ipv6;//是否使用ipv6
 	bool stream;//流模式
+	int  minrto; 
 };
 
 
 
 //连接
 #if FEC_ENABLE
-
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
-
-
 class KConnection:public KMalloc,public KFecPacketTransfer
 {
 public:
@@ -78,7 +101,7 @@ public:
 	KConnection(kcp_t kcp)
 #endif
 	{
-		m_transPort=NULL;
+		m_socket=NULL;
 		ikcp_ctor(&m_kcp,kcp,this);
 		m_kcp.output=SendPacket;
 		m_kcp.writelog=OutLog;
@@ -86,6 +109,7 @@ public:
 		min_heap_idx=-1;
 		m_checkTime=0;
 		m_lastRecv=kTime();
+		m_lastSend=m_lastRecv;
 	}
 
 	~KConnection()
@@ -93,9 +117,9 @@ public:
 		ikcp_dtor(&m_kcp);
 	}
 
-	inline void SetTransport(KTransportBase* transport)
+	inline void SetSocket(KSocket* socket)
 	{
-		m_transPort=transport;
+		m_socket=socket;
 	}
 
 	//设置为流式,默认是包式
@@ -162,6 +186,11 @@ public:
 		return ikcp_nodelay(&m_kcp,nodelay,interval,resend,nc);
 	}
 
+	inline void SetMinRTO(int minrto)
+	{
+		m_kcp.rx_minrto=minrto;
+	}
+
 	inline int CheckReadWrite(int *readable,int *writeable)
 	{
 		return ikcp_check_read_write(&m_kcp,readable,writeable);
@@ -178,9 +207,11 @@ public:
 	}
 
 	inline ktime_t GetLastRecvTime(){return m_lastRecv;}
+	inline ktime_t GetLastSendTime(){return m_lastSend;}
 	inline ktime_t GetCheckTime(){return m_checkTime;}
 	inline kcp_t   GetKcpId(){return m_kcp.conv;}
-
+	inline void    SetLastSendTime(ktime_t current){m_lastSend=current;}
+	inline void    SetLastRecvTime(ktime_t current){m_lastRecv=current;}
 #if FEC_ENABLE
 	void SetFec(fec_t* fec)
 	{
@@ -190,12 +221,19 @@ public:
 
 	virtual int SendPacket(KFecPacket* packet)
 	{
-		packet->head.conv=m_kcp.conv;
-		char buf[1500];
-		kWriteScalar<KFecPacketHead>(buf,packet->head);
-		memcpy(buf+sizeof(KFecPacketHead),packet->data,packet->len);
 		//调用UDP发送数据包
-		return m_transPort->SendPacket(&m_destAddr,buf,sizeof(KFecPacketHead)+packet->len);
+		m_lastSend=kTime();
+
+		iovec iov[2];
+		char head[sizeof(KFecPacketHead)]={0};
+		packet->head.conv=m_kcp.conv;
+		kWriteScalar<KFecPacketHead>(head,packet->head);
+		iov[0].iov_base=head;
+		iov[0].iov_len=sizeof(KFecPacketHead);
+
+		iov[1].iov_base=(char*)packet->data;
+		iov[1].iov_len=packet->len;
+		return m_socket->SendMsg(iov,2,&m_destAddr);
 	}
 
 	virtual int RecvPacket(const char* data,int len)
@@ -215,14 +253,13 @@ private:
 		//使用fec编码后发出去
 		return pThis->m_fecEncode.EncodePacket(buf,len);
 #else
-		return pThis->m_transPort->SendPacket(&pThis->m_destAddr,buf,len);
+		return pThis->m_socket->Sendto(buf,len,&pThis->m_destAddr);
 #endif
 	}
 
 	static void OutLog(const char *log, struct IKCPCB *kcp, void *user)
 	{
-		KConnection* pThis=(KConnection*)user;
-		pThis->m_transPort->OutLog(log);
+		printf("%s\n",log);
 	}
 
 	friend class KServer;
@@ -231,8 +268,9 @@ private:
 	ikcpcb m_kcp;
 	ktime_t m_checkTime;//下一次检查时间
 	ktime_t  m_lastRecv;//上次接收数据时间
-	KAddr m_destAddr;//对方地址
-	KTransportBase* m_transPort;
+	ktime_t  m_lastSend;//上次发送数据时间
+	KAddr    m_destAddr;//对方地址
+	KSocket* m_socket;
 
 #if FEC_ENABLE
 	KFecEncode m_fecEncode;

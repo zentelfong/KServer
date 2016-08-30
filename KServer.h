@@ -4,7 +4,7 @@
 #include "KSocket.h"
 
 
-class KServer:public KTransportBase
+class KServer
 {
 public:
 	KServer(int af)
@@ -61,18 +61,7 @@ public:
 	int Wait(KEvent *ev,int evMax,int delay=-1);
 
 	void SetOptions(const KOptions* opt){m_options=*opt;}
-protected:
 
-	//·¢ËÍUDP°ü
-	virtual int SendPacket(const KAddr* addr,const char *buf, int len)
-	{
-		return m_socket.Sendto(buf,len,addr);
-	}
-
-	virtual void OutLog(const char *log)
-	{
-		printf("%s",log);
-	}
 private:
 	KSocket            m_socket;
 	KHeap<KConnection> m_kcpHeap;

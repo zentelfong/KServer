@@ -5,13 +5,13 @@
 #include "KSocket.h"
 
 
-class KClient:public KTransportBase
+class KClient
 {
 public:
 	KClient(int af,kcp_t kcpId)
 		:m_socket(af),m_connection(kcpId)
 	{
-		m_connection.SetTransport(this);
+		m_connection.SetSocket(&m_socket);
 #if FEC_ENABLE
 		m_fec=fec_new(FEC_DATA_BLOCK_COUNT,FEC_ALL_BLOCK_COUNT);
 		m_connection.SetFec(m_fec);
@@ -61,6 +61,11 @@ protected:
 	virtual int SendPacket(const KAddr* addr,const char *buf, int len)
 	{
 		return m_socket.Sendto(buf,len,addr);
+	}
+
+	virtual int  SendPacket(const KAddr* addr,const iovec *msg, int len)
+	{
+		return m_socket.SendMsg(msg,len,addr);
 	}
 
 	virtual void OutLog(const char *log)

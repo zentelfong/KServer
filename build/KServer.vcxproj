@@ -272,13 +272,13 @@
     <ClInclude Include="..\KSysApi.h" />
     <ClInclude Include="..\KUtil.h" />
     <ClInclude Include="..\support\fec\fec.h" />
+    <ClInclude Include="..\support\http_parser\http_parser.h" />
     <ClInclude Include="..\support\kcp\ikcp.h" />
     <ClInclude Include="..\support\lz4\lz4.h" />
     <ClInclude Include="..\support\lz4\lz4hc.h" />
     <ClInclude Include="..\support\malloc\dlmalloc.h" />
     <ClInclude Include="..\support\uthash.h" />
     <ClInclude Include="..\support\xxhash\xxhash.h" />
-    <ClInclude Include="KRingBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\KClient.cpp" />
@@ -286,6 +286,7 @@
     <ClCompile Include="..\KMemPoll.cpp" />
     <ClCompile Include="..\KServer.cpp" />
     <ClCompile Include="..\support\fec\fec.c" />
+    <ClCompile Include="..\support\http_parser\http_parser.c" />
     <ClCompile Include="..\support\kcp\ikcp.c" />
     <ClCompile Include="..\support\lz4\lz4.c" />
     <ClCompile Include="..\support\lz4\lz4hc.c" />
