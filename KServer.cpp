@@ -62,6 +62,7 @@ int KServer::Wait(KEvent *ev,int evMax,int delay)
 					//KServer的控制数据包,keepAlive，connect等
 					KControlPacketHead packetHead;
 					packetHead.Read(buf);
+					kcpid = packetHead.kcpid;
 					switch (packetHead.controlType)
 					{
 					case KCT_KEEP_ALIVE:
@@ -75,7 +76,7 @@ int KServer::Wait(KEvent *ev,int evMax,int delay)
 								char buf[24]={0};
 								KControlPacketHead keepAlivePacket;
 								keepAlivePacket.unuse=0;
-								keepAlivePacket.kcpid=conn->GetKcpId();
+								keepAlivePacket.kcpid=0;
 								keepAlivePacket.controlType=KCT_KEEP_ALIVE;
 								keepAlivePacket.Write(buf);
 								m_socket.Sendto(buf,sizeof(buf),&conn->m_destAddr);

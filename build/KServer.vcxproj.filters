@@ -36,6 +36,7 @@
     <ClInclude Include="..\KHashMap.h" />
     <ClInclude Include="..\KHeap.h" />
     <ClInclude Include="..\KMemPoll.h" />
+    <ClInclude Include="..\KRingBuffer.h" />
     <ClInclude Include="..\KServer.h" />
     <ClInclude Include="..\KSocket.h" />
     <ClInclude Include="..\KSysApi.h" />

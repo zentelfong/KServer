@@ -3,7 +3,7 @@
 #include "KClient.h"
 
 //µ¥Î»s
-#define RUN_SECONDS 10
+#define RUN_SECONDS 1000
 
 void RunServer()
 {
