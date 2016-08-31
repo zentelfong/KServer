@@ -56,22 +56,6 @@ public:
 
 	//调用connect前调用有效
 	void SetOptions(const KOptions* opt){m_options=*opt;}
-protected:
-
-	virtual int SendPacket(const KAddr* addr,const char *buf, int len)
-	{
-		return m_socket.Sendto(buf,len,addr);
-	}
-
-	virtual int  SendPacket(const KAddr* addr,const iovec *msg, int len)
-	{
-		return m_socket.SendMsg(msg,len,addr);
-	}
-
-	virtual void OutLog(const char *log)
-	{
-		printf("%s",log);
-	}
 
 private:
 	KSocket m_socket;

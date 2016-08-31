@@ -1,20 +1,21 @@
 #pragma once
 #include "KUtil.h"
 #include "xxhash/xxhash.h"
-
+#include "rc4/rc4.h"
 
 //UDP socket的封装,添加数据加密及数据验证
+#define RC4_KEY {35,197,205,237,220,202,185,240,69,43,222,51,203,103,7,172}
+
 class KSocket
 {
 public:
 	enum{
 		XXHASH_SEED=0x0A521248,
-		ENCRYPT_SALT=0x242F29388D239D58
 	};
 
 	KSocket(int af)
 	{
-		memset(&XXH32_state_t,0,sizeof(XXH32_state_t));
+		memset(&m_xxhash,0,sizeof(XXH32_state_t));
 		m_socket=::socket(af, SOCK_DGRAM,0);
 		kSetNonblocking(m_socket);
 		bool reuseAddr=true;
@@ -32,74 +33,82 @@ public:
 	}
 
 	//加密数据包
-	int EncodePacket(char *buf, int len)
+	int EncodePacket(unsigned char *buf, int len)
 	{
 		//对所有数据进行校验
 		XXH32_reset(&m_xxhash,XXHASH_SEED);
 		XXH32_update(&m_xxhash,buf,len);
 		uint32_t hashVal=XXH32_digest(&m_xxhash);
-		uint64_t key= hashVal * ENCRYPT_SALT + hashVal;
-		//对data部分进行加密
-		char* data=buf;
-		int fLen=len/8*8;//fLen为8的倍数
 
-		while (data<=fLen)
+		//使用rc4加密
+		unsigned char key[16]=RC4_KEY;
+		for (int i=0;i<4;++i)
 		{
-			*(uint64_t*)data^=key;
-			data+=8;
+			((uint32_t*)key)[i]^=hashVal;
 		}
 
-		//尾部少于8字节
-		char key2[8];
-		*(uint64_t*)key2=ENCRYPT_SALT;
-		for(int i=fLen;i<len;++i)
-		{
-			buf[fLen]^=key2[i-fLen];
-		}
-
-
+		rc4_setup(&m_rc4,key,sizeof(key));
+		rc4_crypt(&m_rc4,buf,len);
+		*(uint32_t*)(buf+len)=kByteSwapLE(hashVal);
+		return len+4;
 	}
 
+	//解密数据包并做完整性验证
+	int DecodePacket(unsigned char *buf, int len)
+	{
+		if (len<4)
+			return -1;
+		len-=4;
+		uint32_t hashVal=kByteSwapLE(*(uint32_t*)(buf+len));
+		unsigned char key[16]=RC4_KEY;
+		for (int i=0;i<4;++i)
+		{
+			((uint32_t*)key)[i]^=hashVal;
+		}
 
-	/////////////////////////////////////////////////////////////////////////
-	//            |                  |            |                         |
-	//   trnsid   |      data        |    xhash 4 |           end  4        |
-	//            |                  |            |                         |
-	/////////////////////////////////////////////////////////////////////////
+		rc4_setup(&m_rc4,key,sizeof(key));
+		rc4_crypt(&m_rc4,buf,len);
+
+		XXH32_reset(&m_xxhash,XXHASH_SEED);
+		XXH32_update(&m_xxhash,buf,len);
+		if(XXH32_digest(&m_xxhash)==hashVal)
+			return len;
+		else
+			return 0;
+	}
 
 	inline int SendMsg(const iovec* msg,int count,const KAddr* addr)
 	{
-		int res;
-#ifndef WIN32
-		msghdr mh;
-		mh.msg_name = addr->sockAddr();
-		mh.msg_namelen = addr->sockAddrLen();
-		mh.msg_iov = msg;
-		mh.msg_iovlen = count;
-		mh.msg_control = NULL;
-		mh.msg_controllen = 0;
-		mh.msg_flags = 0;
-		res = ::sendmsg(m_iSocket, &mh, 0);
-#else
-		DWORD size = 0;
-		res = ::WSASendTo(m_socket, (LPWSABUF)msg, count, &size, 0, addr->sockAddr(),addr->sockAddrLen(), NULL, NULL);
-		res = (0 == res) ? size : -1;
-#endif
-		return res;
+		unsigned char data[1600];
+		int dataLen=0;
+		for (int i=0;i<count;++i)
+		{
+			memcpy(data+dataLen,msg[i].iov_base,msg[i].iov_len);
+			dataLen+=msg[i].iov_len;
+		}
+		dataLen=EncodePacket(data,dataLen);//加密数据包
+		return ::sendto(m_socket,(const char*)data,dataLen,0,addr->sockAddr(),addr->sockAddrLen());
 	}
-
 
 	inline int Sendto(const void *buf, int len,const KAddr* addr)
 	{
-		return ::sendto(m_socket,(const char*)buf,len,0,addr->sockAddr(),addr->sockAddrLen());
+		unsigned char data[1600];
+		memcpy(data,buf,len);
+		len=EncodePacket(data,len);//加密数据包
+		return ::sendto(m_socket,(const char*)data,len,0,addr->sockAddr(),addr->sockAddrLen());
 	}
 
 	inline int Recvfrom(void *buf, int len,KAddr *from)
 	{
 		sockaddr_in6 inaddr;
 		int addrlen=sizeof(inaddr);
-		int rslt= ::recvfrom(m_socket,(char*)buf,len,0,(sockaddr*)&inaddr,&addrlen);
-		from->set((sockaddr*)&inaddr,addrlen);
+		int rslt= ::recvfrom(m_socket,(char*)buf,len,0,(sockaddr*)&inaddr,&addrlen);//失败返回-1
+		if (rslt>0)
+		{
+			rslt=DecodePacket((unsigned char *)buf,rslt);
+			if (len>0)
+				from->set((sockaddr*)&inaddr,addrlen);
+		}
 		return rslt;
 	}
 
@@ -125,6 +134,7 @@ public:
 private:
 	SOCKET   m_socket;
 	XXH32_state_t m_xxhash;
+	rc4_state     m_rc4;
 };
 
 

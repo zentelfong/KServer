@@ -3,7 +3,7 @@
 .NOTPARALLEL:
 
 ifndef config
-  config=release_win32
+  config=release_linux
 endif
 
 ifndef verbose

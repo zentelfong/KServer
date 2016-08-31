@@ -261,6 +261,7 @@
   <ItemGroup>
     <ClInclude Include="..\KAddr.h" />
     <ClInclude Include="..\KClient.h" />
+    <ClInclude Include="..\KCompressor.h" />
     <ClInclude Include="..\KConnection.h" />
     <ClInclude Include="..\KEndian.h" />
     <ClInclude Include="..\KFEC.h" />
@@ -277,11 +278,13 @@
     <ClInclude Include="..\support\lz4\lz4.h" />
     <ClInclude Include="..\support\lz4\lz4hc.h" />
     <ClInclude Include="..\support\malloc\dlmalloc.h" />
+    <ClInclude Include="..\support\rc4\rc4.h" />
     <ClInclude Include="..\support\uthash.h" />
     <ClInclude Include="..\support\xxhash\xxhash.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\KClient.cpp" />
+    <ClCompile Include="..\KCompressor.cpp" />
     <ClCompile Include="..\KFEC.cpp" />
     <ClCompile Include="..\KMemPoll.cpp" />
     <ClCompile Include="..\KServer.cpp" />
@@ -291,6 +294,7 @@
     <ClCompile Include="..\support\lz4\lz4.c" />
     <ClCompile Include="..\support\lz4\lz4hc.c" />
     <ClCompile Include="..\support\malloc\dlmalloc.c" />
+    <ClCompile Include="..\support\rc4\rc4.c" />
     <ClCompile Include="..\support\xxhash\xxhash.c" />
     <ClCompile Include="..\test.cpp" />
   </ItemGroup>

@@ -52,7 +52,7 @@ void fec_encode(const fec_t* fec, const gf** data_blocks,size_t nrDataBlocks, gf
 
 typedef struct fec_enc_data 
 {
-	const gf* data;
+	gf* data;
 	size_t len;
 }fec_enc_data;
 

@@ -164,14 +164,12 @@ public:
 
 	virtual int SendPacket(KFecPacket* packet)
 	{
-		
-
-		char buf[FEC_MTU+sizeof(KFecPacket)];
+		char buf[1400+sizeof(KFecPacket)];
 		kWriteScalar<KFecPacketHead>(buf,packet->head);
 		memcpy(buf+sizeof(KFecPacketHead),packet->data,packet->len);
 
 		//5号包和6号包丢失
-		if(packet->head.pckid!=5 && packet->head.pckid!=0)
+		if(packet->head.pckid!=5 && packet->head.pckid!=(packet->head.grpid%8))
 		{
 			printf("send packet %d,%d\n",packet->head.grpid,packet->head.pckid);
 			return m_decode->DecodePacket(buf,packet->len+sizeof(KFecPacketHead))+sizeof(KFecPacketHead);
@@ -260,15 +258,38 @@ malloc耗时 1732
 */
 }
 
+void TestSocketEncode()
+{
+	KSocket socket(AF_INET);
+	unsigned char buf[1404];
+	for (int i=0;i<1404;++i)
+	{
+		buf[i]='a'+i%26;
+	}
+
+	socket.EncodePacket(buf,1400);
+	if(socket.DecodePacket(buf,1404)>0)
+	{
+		printf("验证成功\n");
+	}
+	else
+		printf("验证失败\n");
+
+	getchar();
+}
+
+
+
 int main()
 {
 	KThreadMemPoll poll(1024*1024);
 	KNetInitialized netinit;
 	//TestFEC();
 	//TestMalloc();
+	//TestSocketEncode();
 
 	printf("输入s启动服务器，c启动客户端,m启动多个客户端\n");
-
+	
 	int ch=getchar();
 	if (ch=='s')
 	{

@@ -151,6 +151,8 @@ public:
 		m_destAddr=*addr;//更新地址
 		m_lastRecv=time;
 #if FEC_ENABLE
+		data+=sizeof(kcp_t);
+		size-=sizeof(kcp_t);
 		return m_fecDecode.DecodePacket(data,size);
 #else
 		return ikcp_input(&m_kcp,data,size);
@@ -164,10 +166,6 @@ public:
 
 	inline int SetMTU(int mtu)
 	{
-#if FEC_ENABLE
-		m_fecEncode.SetMtu(mtu);
-		m_fecDecode.SetMtu(mtu);
-#endif
 		return ikcp_setmtu(&m_kcp,mtu);
 	}
 
@@ -223,13 +221,13 @@ public:
 	{
 		//调用UDP发送数据包
 		m_lastSend=kTime();
-
 		iovec iov[2];
-		char head[sizeof(KFecPacketHead)]={0};
-		packet->head.conv=m_kcp.conv;
-		kWriteScalar<KFecPacketHead>(head,packet->head);
+		char head[sizeof(kcp_t)+sizeof(KFecPacketHead)];
+		kWriteScalar<uint32_t>(head,GetKcpId());
+		kWriteScalar<KFecPacketHead>(head+sizeof(kcp_t),packet->head);
+
 		iov[0].iov_base=head;
-		iov[0].iov_len=sizeof(KFecPacketHead);
+		iov[0].iov_len=sizeof(head);
 
 		iov[1].iov_base=(char*)packet->data;
 		iov[1].iov_len=packet->len;
@@ -250,7 +248,6 @@ private:
 	{
 		KConnection* pThis=(KConnection*)user;
 #if FEC_ENABLE
-		//使用fec编码后发出去
 		return pThis->m_fecEncode.EncodePacket(buf,len);
 #else
 		return pThis->m_socket->Sendto(buf,len,&pThis->m_destAddr);

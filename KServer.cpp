@@ -107,7 +107,7 @@ int KServer::Wait(KEvent *ev,int evMax,int delay)
 					}
 				}
 			}
-			else
+			else if(recv<0)
 				break;
 		} while (1);
 	}

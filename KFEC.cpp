@@ -4,7 +4,7 @@
 
 
 KFecEncode::KFecEncode(KFecPacketTransfer* transfer)
-	:m_groupId(1),m_packetId(0),m_transfer(transfer),m_fec(NULL),m_mtu(FEC_MTU)
+	:m_groupId(0),m_packetId(0),m_transfer(transfer),m_fec(NULL)
 {
 	memset(m_buffer,0,sizeof(m_buffer));
 }
@@ -26,12 +26,20 @@ void KFecEncode::ReleaseBuffer()
 
 int KFecEncode::EncodePacket(const char* data,int len)
 {
+	//fec_enc_data& buf=m_buffer[m_packetId];
+	//buf.data=(gf*)kRealloc((gf*)buf.data,len+1);
+	//memcpy((void*)buf.data,data,len);
+	//buf.data[len]=FEC_PACKET_END;
+	//buf.len=len;
+	//data=(char*)buf.data;
+	//len=len+1;
+
 	KFecPacket packet;
-	packet.head.conv=0;
 	packet.head.grpid=m_groupId;
 	packet.head.pckid=m_packetId;
 	packet.data=data;
 	packet.len=len;
+
 
 	int rslt=m_transfer->SendPacket(&packet);
 	if (rslt==sizeof(KFecPacketHead)+len)
@@ -42,23 +50,30 @@ int KFecEncode::EncodePacket(const char* data,int len)
 			fec_enc_data& buf=m_buffer[FEC_DATA_BLOCK_COUNT-1];
 			buf.data=(gf*)data;
 			buf.len=len;
+			size_t blockSize=0;
 
+			//冗余数据块的长度为最大的那一个数据包的长度
+			for (int i=0;i<FEC_DATA_BLOCK_COUNT;++i)
+			{
+				if (m_buffer[i].len>blockSize)
+					blockSize=m_buffer[i].len;
+			}
 
 			gf* fec[FEC_FEC_BLOCK_COUNT];
 			for (int i=0;i<FEC_FEC_BLOCK_COUNT;++i)
 			{
-				fec[i]=(gf*)kMalloc(m_mtu);//申请冗余数据包
+				fec[i]=(gf*)kMalloc(blockSize);//申请冗余数据包
 			}
 
 			//计算冗余数据
-			fec_encode2(m_fec,m_buffer,FEC_DATA_BLOCK_COUNT,fec,FEC_FEC_BLOCK_COUNT,m_mtu);
+			fec_encode2(m_fec,m_buffer,FEC_DATA_BLOCK_COUNT,fec,FEC_FEC_BLOCK_COUNT,blockSize);
 
 			//发送冗余数据包
 			for (int i=0;i<FEC_FEC_BLOCK_COUNT;++i)
 			{
 				packet.head.pckid=i+FEC_DATA_BLOCK_COUNT;
 				packet.data=(char*)fec[i];
-				packet.len=m_mtu;
+				packet.len=blockSize;
 				m_transfer->SendPacket(&packet);
 				kFree(fec[i]);//释放冗余数据包
 			}
@@ -87,7 +102,7 @@ int KFecEncode::EncodePacket(const char* data,int len)
 
 
 KFecDecode::KFecDecode(KFecPacketTransfer* transfer)
-	:m_transfer(transfer),m_fec(NULL),m_mtu(FEC_MTU)
+	:m_transfer(transfer),m_fec(NULL)
 {
 	memset(m_fecGroup,0,sizeof(m_fecGroup));
 }
@@ -179,13 +194,13 @@ void KFecDecode::FinishGroup(FECGroup* group)
 	group->resumed=true;
 }
 
-
+//检查是否可以还原丢失的包
 void KFecDecode::CheckGroup(FECGroup* group)
 {
 	int dataCount=0;
 	int fecCount=0;
 	int fecIndex=FEC_DATA_BLOCK_COUNT;
-
+	size_t blockSize=0;
 	fec_dec_data data[FEC_ALL_BLOCK_COUNT]={0};//已接收的，供恢复的数据
 
 	for (int i=0,idx=0;i<FEC_ALL_BLOCK_COUNT;++i)
@@ -208,6 +223,8 @@ void KFecDecode::CheckGroup(FECGroup* group)
 				{
 					data[i]=group->data[j];
 					fecIndex=j+1;
+					if(data[i].len>blockSize)
+						blockSize=data[i].len;
 					break;
 				}
 			}
@@ -225,10 +242,10 @@ void KFecDecode::CheckGroup(FECGroup* group)
 		gf* outBlock[FEC_FEC_BLOCK_COUNT];
 		for (int i=0;i<FEC_FEC_BLOCK_COUNT;++i)
 		{
-			outBlock[i]=(gf*)kMalloc(m_mtu);//申请冗余数据包
+			outBlock[i]=(gf*)kMalloc(blockSize);//申请冗余数据包
 		}
 
-		fec_decode2(m_fec,data,outBlock,m_mtu);
+		fec_decode2(m_fec,data,outBlock,blockSize);
 
 #ifdef DEBUG
 		for (int i=0;i<FEC_DATA_BLOCK_COUNT;++i)
@@ -243,7 +260,7 @@ void KFecDecode::CheckGroup(FECGroup* group)
 		for (int i=0;i<FEC_FEC_BLOCK_COUNT;++i)
 		{
 			//恢复了数据块
-			m_transfer->RecvPacket((char*)outBlock[i],ikcp_packet_len((char*)outBlock[i],m_mtu));
+			m_transfer->RecvPacket((char*)outBlock[i],ikcp_packet_len((char*)outBlock[i],blockSize));
 			kFree(outBlock[i]);
 		}
 		FinishGroup(group);

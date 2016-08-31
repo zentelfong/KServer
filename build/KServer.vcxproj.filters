@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="support">
@@ -19,6 +19,9 @@
     <Filter Include="support\malloc">
       <UniqueIdentifier>{89E1D688-75AF-CA8E-5E43-3BB54AB0A6F3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="support\rc4">
+      <UniqueIdentifier>{9A5CDD72-0612-5668-8F06-503FFBBA4C6C}</UniqueIdentifier>
+    </Filter>
     <Filter Include="support\xxhash">
       <UniqueIdentifier>{45741DA4-3142-11AA-1AD6-81D00643ED0E}</UniqueIdentifier>
     </Filter>
@@ -26,6 +29,7 @@
   <ItemGroup>
     <ClInclude Include="..\KAddr.h" />
     <ClInclude Include="..\KClient.h" />
+    <ClInclude Include="..\KCompressor.h" />
     <ClInclude Include="..\KConnection.h" />
     <ClInclude Include="..\KEndian.h" />
     <ClInclude Include="..\KFEC.h" />
@@ -54,6 +58,9 @@
     <ClInclude Include="..\support\malloc\dlmalloc.h">
       <Filter>support\malloc</Filter>
     </ClInclude>
+    <ClInclude Include="..\support\rc4\rc4.h">
+      <Filter>support\rc4</Filter>
+    </ClInclude>
     <ClInclude Include="..\support\uthash.h">
       <Filter>support</Filter>
     </ClInclude>
@@ -63,6 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\KClient.cpp" />
+    <ClCompile Include="..\KCompressor.cpp" />
     <ClCompile Include="..\KFEC.cpp" />
     <ClCompile Include="..\KMemPoll.cpp" />
     <ClCompile Include="..\KServer.cpp" />
@@ -83,6 +91,9 @@
     </ClCompile>
     <ClCompile Include="..\support\malloc\dlmalloc.c">
       <Filter>support\malloc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\support\rc4\rc4.c">
+      <Filter>support\rc4</Filter>
     </ClCompile>
     <ClCompile Include="..\support\xxhash\xxhash.c">
       <Filter>support\xxhash</Filter>
