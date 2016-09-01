@@ -1,0 +1,8 @@
+install: make
+language: cpp
+compiler:
+    - gcc
+    - clang
+script:
+    - cd build
+    - make config=release_linux
