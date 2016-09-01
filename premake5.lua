@@ -43,5 +43,5 @@ project "KServer"
 		"support/**.h", "support/**.cpp","support/**.c",
 	}
 filter { "platforms:Linux" }
-	links{"pthread"}
+	links{"pthread","rt"}
 
