@@ -1,5 +1,7 @@
 #KServer
-
+[![Build Status][1]][2] 
+[1]: https://api.travis-ci.org/zentelfong/KServer.svg?branch=master
+[2]: https://travis-ci.org/zentelfong/KServer
 ## 简介 ##
 是C++语言编写的跨平台的高性能UDP可靠传输服务器及客户端的实现。
 
