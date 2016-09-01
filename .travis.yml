@@ -4,5 +4,4 @@ compiler:
     - gcc
     - clang
 script:
-    - cd build
-    - make config=release_linux
+    - make -C build config=release_linux
