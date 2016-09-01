@@ -34,6 +34,8 @@
 */
 #pragma once
 
+#include <stdlib.h>//for size_t
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
@@ -65,7 +67,7 @@ int LZ4_versionNumber (void);
  */
 #define LZ4_MEMORY_USAGE 14
 
-void lz4_allocator(void* (*new_calloc)(size_t,size_t), void (*new_free)(void*));
+static void lz4_allocator(void* (*new_calloc)(size_t,size_t), void (*new_free)(void*));
 
 /**************************************
 *  Simple Functions

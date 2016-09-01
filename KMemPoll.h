@@ -1,5 +1,9 @@
 #pragma once
 #include "KSysApi.h"
+#ifndef WIN32
+//linux
+#define STRUCT_MALLINFO_DECLARED
+#endif
 #include "malloc/dlmalloc.h"
 
 #ifdef WIN32

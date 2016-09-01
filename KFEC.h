@@ -2,9 +2,8 @@
 #define _KFEC_H_
 
 #include "fec/fec.h"
-#include "KUtil.h"
+#include "KMemPoll.h"
 #include "KEndian.h"
-
 
 //默认8个数据包，产生2个冗余包，冗余25%
 //如果网络每10个包丢2个包，可以还原为不丢包
@@ -15,6 +14,7 @@
 //定义为0表示不启用fec
 #define FEC_ENABLE 1
 #define FEC_PACKET_END 0xfe
+#define FEC_OVERHEAD (sizeof(KFecPacketHead)+1)
 
 //FEC包头4个字节
 struct KFecPacketHead
@@ -26,7 +26,7 @@ struct KFecPacketHead
 struct KFecPacket 
 {
 	KFecPacketHead head;//fec 头部4个字节
-	uint32_t len;		//data 的字节数
+	int len;		//data 的字节数
 	const char* data;
 };
 

@@ -26,30 +26,24 @@ void KFecEncode::ReleaseBuffer()
 
 int KFecEncode::EncodePacket(const char* data,int len)
 {
-	//fec_enc_data& buf=m_buffer[m_packetId];
-	//buf.data=(gf*)kRealloc((gf*)buf.data,len+1);
-	//memcpy((void*)buf.data,data,len);
-	//buf.data[len]=FEC_PACKET_END;
-	//buf.len=len;
-	//data=(char*)buf.data;
-	//len=len+1;
+	fec_enc_data& buf=m_buffer[m_packetId];
+	buf.data=(gf*)kRealloc((gf*)buf.data,len+1);
+	memcpy((void*)buf.data,data,len);
+	buf.data[len]=FEC_PACKET_END;
+	buf.len=len+1;
 
 	KFecPacket packet;
 	packet.head.grpid=m_groupId;
 	packet.head.pckid=m_packetId;
-	packet.data=data;
-	packet.len=len;
-
+	packet.data=(const char*)buf.data;
+	packet.len=buf.len;
 
 	int rslt=m_transfer->SendPacket(&packet);
-	if (rslt==sizeof(KFecPacketHead)+len)
+	if (rslt==sizeof(KFecPacketHead)+packet.len)
 	{
 		if(++m_packetId==FEC_DATA_BLOCK_COUNT)
 		{
 			//生成冗余包，发送出去
-			fec_enc_data& buf=m_buffer[FEC_DATA_BLOCK_COUNT-1];
-			buf.data=(gf*)data;
-			buf.len=len;
 			size_t blockSize=0;
 
 			//冗余数据块的长度为最大的那一个数据包的长度
@@ -78,22 +72,11 @@ int KFecEncode::EncodePacket(const char* data,int len)
 				kFree(fec[i]);//释放冗余数据包
 			}
 
-			//最后一个buf不能由ReleaseBuffer释放
-			buf.data=NULL;
-			buf.len=0;
-
 			ReleaseBuffer();//释放缓存的buffer
 
 			//使用下一个分组id
 			m_packetId=0;
 			++m_groupId;
-		}
-		else
-		{
-			fec_enc_data& buf=m_buffer[packet.head.pckid];
-			buf.data=(gf*)kRealloc((gf*)buf.data,len);
-			memcpy((void*)buf.data,data,len);
-			buf.len=len;
 		}
 	}
 	return rslt;
@@ -121,14 +104,14 @@ int KFecDecode::DecodePacket(const char* data,int len)
 	KFecPacketHead packet;
 	packet=kReadScalar<KFecPacketHead>(data);
 
-	if (packet.pckid<FEC_ALL_BLOCK_COUNT && len>sizeof(KFecPacketHead))
+	if (packet.pckid<FEC_ALL_BLOCK_COUNT && len> FEC_OVERHEAD)
 	{
 		//去掉fec头部数据
 		data=data+sizeof(KFecPacketHead);
 		len=len-sizeof(KFecPacketHead);
 
 		if(packet.pckid<FEC_DATA_BLOCK_COUNT)
-			rslt=m_transfer->RecvPacket(data,len);//收到数据包
+			rslt=m_transfer->RecvPacket(data,len-1);//收到数据包
 
 		FECGroup& group=m_fecGroup[packet.grpid%GROUP_COUNT];
 		fec_dec_data& fecData=group.data[packet.pckid];
@@ -164,7 +147,7 @@ int KFecDecode::DecodePacket(const char* data,int len)
 			return -1;
 		}
 
-		return rslt;
+		return rslt+1;
 	}
 	else
 	{
@@ -203,7 +186,7 @@ void KFecDecode::CheckGroup(FECGroup* group)
 	size_t blockSize=0;
 	fec_dec_data data[FEC_ALL_BLOCK_COUNT]={0};//已接收的，供恢复的数据
 
-	for (int i=0,idx=0;i<FEC_ALL_BLOCK_COUNT;++i)
+	for (int i=0;i<FEC_ALL_BLOCK_COUNT;++i)
 	{
 		if (group->data[i].data)
 		{
@@ -260,7 +243,16 @@ void KFecDecode::CheckGroup(FECGroup* group)
 		for (int i=0;i<FEC_FEC_BLOCK_COUNT;++i)
 		{
 			//恢复了数据块
-			m_transfer->RecvPacket((char*)outBlock[i],ikcp_packet_len((char*)outBlock[i],blockSize));
+			int len=blockSize;
+			for (int j=blockSize-1;j>=0;--j)
+			{
+				if (outBlock[i][j]==FEC_PACKET_END)
+				{
+					len=j;
+					break;
+				}
+			}
+			m_transfer->RecvPacket((char*)outBlock[i],len);
 			kFree(outBlock[i]);
 		}
 		FinishGroup(group);

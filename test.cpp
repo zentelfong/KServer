@@ -221,11 +221,16 @@ void TestFEC()
 	fec_delete(fec);
 }
 
+
+
+
+
+
 void TestMalloc()
 {
 #define TEST_COUNT 1000000
 
-	DWORD tick=GetTickCount();
+	uint32_t tick=GetTickCount();
 	KMemPoll* poll=KThreadMemPoll::Current();
 	for (int i=0;i<TEST_COUNT;++i)
 	{
@@ -284,7 +289,7 @@ int main()
 {
 	KThreadMemPoll poll(1024*1024);
 	KNetInitialized netinit;
-	//TestFEC();
+	TestFEC();
 	//TestMalloc();
 	//TestSocketEncode();
 

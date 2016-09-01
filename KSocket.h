@@ -1,9 +1,9 @@
-#pragma once
+ï»¿#pragma once
 #include "KUtil.h"
 #include "xxhash/xxhash.h"
 #include "rc4/rc4.h"
 
-//UDP socketµÄ·â×°,Ìí¼ÓÊı¾İ¼ÓÃÜ¼°Êı¾İÑéÖ¤
+//UDP socketçš„å°è£…,æ·»åŠ æ•°æ®åŠ å¯†åŠæ•°æ®éªŒè¯
 #define RC4_KEY {35,197,205,237,220,202,185,240,69,43,222,51,203,103,7,172}
 
 class KSocket
@@ -32,15 +32,15 @@ public:
 		return ::bind(m_socket,addr->sockAddr(),addr->sockAddrLen());
 	}
 
-	//¼ÓÃÜÊı¾İ°ü
+	//åŠ å¯†æ•°æ®åŒ…
 	int EncodePacket(unsigned char *buf, int len)
 	{
-		//¶ÔËùÓĞÊı¾İ½øĞĞĞ£Ñé
+		//å¯¹æ‰€æœ‰æ•°æ®è¿›è¡Œæ ¡éªŒ
 		XXH32_reset(&m_xxhash,XXHASH_SEED);
 		XXH32_update(&m_xxhash,buf,len);
 		uint32_t hashVal=XXH32_digest(&m_xxhash);
 
-		//Ê¹ÓÃrc4¼ÓÃÜ
+		//ä½¿ç”¨rc4åŠ å¯†
 		unsigned char key[16]=RC4_KEY;
 		for (int i=0;i<4;++i)
 		{
@@ -53,7 +53,7 @@ public:
 		return len+4;
 	}
 
-	//½âÃÜÊı¾İ°ü²¢×öÍêÕûĞÔÑéÖ¤
+	//è§£å¯†æ•°æ®åŒ…å¹¶åšå®Œæ•´æ€§éªŒè¯
 	int DecodePacket(unsigned char *buf, int len)
 	{
 		if (len<4)
@@ -86,7 +86,7 @@ public:
 			memcpy(data+dataLen,msg[i].iov_base,msg[i].iov_len);
 			dataLen+=msg[i].iov_len;
 		}
-		dataLen=EncodePacket(data,dataLen);//¼ÓÃÜÊı¾İ°ü
+		dataLen=EncodePacket(data,dataLen);//åŠ å¯†æ•°æ®åŒ…
 		return ::sendto(m_socket,(const char*)data,dataLen,0,addr->sockAddr(),addr->sockAddrLen());
 	}
 
@@ -94,15 +94,15 @@ public:
 	{
 		unsigned char data[1600];
 		memcpy(data,buf,len);
-		len=EncodePacket(data,len);//¼ÓÃÜÊı¾İ°ü
+		len=EncodePacket(data,len);//åŠ å¯†æ•°æ®åŒ…
 		return ::sendto(m_socket,(const char*)data,len,0,addr->sockAddr(),addr->sockAddrLen());
 	}
 
 	inline int Recvfrom(void *buf, int len,KAddr *from)
 	{
 		sockaddr_in6 inaddr;
-		int addrlen=sizeof(inaddr);
-		int rslt= ::recvfrom(m_socket,(char*)buf,len,0,(sockaddr*)&inaddr,&addrlen);//Ê§°Ü·µ»Ø-1
+		socklen_t addrlen=sizeof(inaddr);
+		int rslt= ::recvfrom(m_socket,(char*)buf,len,0,(sockaddr*)&inaddr,&addrlen);//å¤±è´¥è¿”å›-1
 		if (rslt>0)
 		{
 			rslt=DecodePacket((unsigned char *)buf,rslt);
@@ -114,7 +114,7 @@ public:
 
 	bool CheckReadable(ktime_t time)
 	{
-		//select³¬Ê±¼ì²ésocket
+		//selectè¶…æ—¶æ£€æŸ¥socket
 		fd_set fdRead;
 		struct timeval timeout;
 		timeout.tv_usec=time*1000;

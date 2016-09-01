@@ -6,6 +6,7 @@
 #include "KHashMap.h"
 #include "KMemPoll.h"
 #include "KAddr.h"
+#include <stdio.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
@@ -22,11 +23,11 @@ inline int kSetNonblocking(SOCKET fd)
 	{
 		int flags;
 		if ((flags = fcntl(fd, F_GETFL, NULL)) < 0) {
-			event_warn("fcntl(%d, F_GETFL)", fd);
+			printf("fcntl(%d, F_GETFL)", fd);
 			return -1;
 		}
 		if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-			event_warn("fcntl(%d, F_SETFL)", fd);
+			printf("fcntl(%d, F_SETFL)", fd);
 			return -1;
 		}
 	}

@@ -146,6 +146,7 @@ public:
 		return ikcp_recv(&m_kcp,buffer,len);
 	}
 
+	//0成功，-1失败
 	inline int RecvPacket(const char *data, long size,ktime_t time,const KAddr* addr)
 	{
 		m_destAddr=*addr;//更新地址

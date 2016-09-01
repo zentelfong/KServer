@@ -46,8 +46,7 @@ static gf inverse[256]; /* inverse of field elem.               */
  * modnn(x) computes x % GF_SIZE, where GF_SIZE is 2**GF_BITS - 1,
  * without a slow divide.
  */
-static gf
-modnn(int x) {
+gf modnn(int x) {
     while (x >= 255) {
         x -= 255;
         x = (x >> 8) + (x & 255);
@@ -86,8 +85,7 @@ static gf gf_mul_table[256][256];
  * For efficiency, gf_exp[] has size 2*GF_SIZE, so that a simple
  * multiplication of two numbers can be resolved without calling modnn
  */
-static void
-_init_mul_table(void) {
+void _init_mul_table(void) {
   int i, j;
   for (i = 0; i < 256; i++)
       for (j = 0; j < 256; j++)
@@ -103,8 +101,7 @@ _init_mul_table(void) {
 /*
  * initialize the data structures used for computations in GF.
  */
-static void
-generate_gf (void) {
+void generate_gf (void) {
     int i;
     gf mask;
 
@@ -179,8 +176,8 @@ generate_gf (void) {
     if (c != 0) _addmul1(dst, src, c, sz)
 
 #define UNROLL 16               /* 1, 4, 8, 16 */
-static void
-_addmul1(register gf* dst, const register gf* src, gf c, size_t sz) {
+
+void _addmul1(gf* dst, const gf* src, gf c, size_t sz) {
     USE_GF_MULC;
     const gf* lim = &dst[sz - UNROLL + 1];
 
@@ -218,8 +215,7 @@ _addmul1(register gf* dst, const register gf* src, gf c, size_t sz) {
 /*
  * computes C = AB where A is n*k, B is k*m, C is n*m
  */
-static void
-_matmul(gf * a, gf * b, gf * c, unsigned n, unsigned k, unsigned m) {
+void _matmul(gf * a, gf * b, gf * c, unsigned n, unsigned k, unsigned m) {
     unsigned row, col, i;
 
     for (row = 0; row < n; row++) {
@@ -240,8 +236,7 @@ _matmul(gf * a, gf * b, gf * c, unsigned n, unsigned k, unsigned m) {
  * (Gauss-Jordan, adapted from Numerical Recipes in C)
  * Return non-zero if singular.
  */
-static void
-_invert_mat(gf* src, unsigned k) {
+void _invert_mat(gf* src, unsigned k) {
     gf c, *p;
     unsigned irow = 0;
     unsigned icol = 0;
@@ -344,8 +339,7 @@ _invert_mat(gf* src, unsigned k) {
  * p = coefficients of the matrix (p_i)
  * q = values of the polynomial (known)
  */
-void
-_invert_vdm (gf* src, unsigned k) {
+void _invert_vdm (gf* src, unsigned k) {
     unsigned i, j, row, col;
     gf *b, *c, *p;
     gf t, xx;
@@ -400,8 +394,7 @@ _invert_vdm (gf* src, unsigned k) {
 }
 
 static int fec_initialized = 0;
-static void
-init_fec (void) {
+void init_fec (void) {
 	if (fec_initialized == 0)
 	{
 		generate_gf();
@@ -418,15 +411,13 @@ init_fec (void) {
 
 #define FEC_MAGIC	0xFECC0DEC
 
-void
-fec_delete (fec_t *p) {
+void fec_delete (fec_t *p) {
     assert (p != NULL && p->magic == (((FEC_MAGIC ^ p->k) ^ p->n) ^ (unsigned long) (p->enc_matrix)));
     fec_free (p->enc_matrix);
     fec_free (p);
 }
 
-fec_t *
-fec_new(unsigned short k, unsigned short n) {
+fec_t *fec_new(unsigned short k, unsigned short n) {
     unsigned col;
 	int row;
     gf *p, *tmp_m;
@@ -471,8 +462,7 @@ fec_new(unsigned short k, unsigned short n) {
 }
 
 
-void
-fec_encode(const fec_t* fec, const gf** data_blocks,size_t nrDataBlocks, gf** fec_blocks,size_t nrFecBlocks,size_t blockSize) {
+void fec_encode(const fec_t* fec, const gf** data_blocks,size_t nrDataBlocks, gf** fec_blocks,size_t nrFecBlocks,size_t blockSize) {
 	unsigned char i, j;
 	const gf* p;
 
@@ -505,8 +495,7 @@ void fec_encode2(const fec_t* fec, const fec_enc_data* data_blocks,size_t nrData
  *
  * @param matrix a space allocated for a k by k matrix
  */
-void
-build_decode_matrix_into_space(const fec_t* code, const unsigned*  index, const unsigned k, gf* matrix) {
+void build_decode_matrix_into_space(const fec_t* code, const unsigned*  index, const unsigned k, gf* matrix) {
     unsigned char i;
     gf* p;
     for (i=0, p=matrix; i < k; i++, p += k) {
@@ -520,8 +509,7 @@ build_decode_matrix_into_space(const fec_t* code, const unsigned*  index, const 
     _invert_mat (matrix, k);
 }
 
-void
-fec_decode(const fec_t* fec, const gf** inpkts, gf** outpkts, const unsigned* index, size_t sz) {
+void fec_decode(const fec_t* fec, const gf** inpkts, gf** outpkts, const unsigned* index, size_t sz) {
     gf* m_dec = (gf*)alloca(fec->k * fec->k);
     unsigned char outix=0;
     unsigned char row=0;
@@ -540,8 +528,7 @@ fec_decode(const fec_t* fec, const gf** inpkts, gf** outpkts, const unsigned* in
 }
 
 
-void
-build_decode_matrix_into_space2(const fec_t* code, const fec_dec_data*  index, const unsigned k, gf* matrix) {
+void build_decode_matrix_into_space2(const fec_t* code, const fec_dec_data*  index, const unsigned k, gf* matrix) {
 	unsigned char i;
 	gf* p;
 	for (i=0, p=matrix; i < k; i++, p += k) {
